@@ -36,5 +36,14 @@ h1, h2, h3 { font-family: 'IBM Plex Serif', serif !important; color: #12263A; le
 .ficha p { margin: 0; font-size: .92rem; color: #3B4F63; }
 .ficha.activa { border: 2px solid #0F8B8D; }
 .ok { color: #0F8B8D; font-weight: 600; } .mal { color: #B3261E; font-weight: 600; }
+
+[data-testid="stTable"] table, .stTable table { width: 100%; border-collapse: separate; border-spacing: 0;
+  background: #fff; border: 1px solid #C9D6DD; border-radius: 10px; overflow: hidden; font-size: .93rem; }
+[data-testid="stTable"] thead tr th, .stTable thead tr th { background: #0F8B8D !important; color: #fff !important;
+  font-weight: 600; padding: .6rem .8rem; text-align: left; border-bottom: 2px solid #0B6B6D; }
+[data-testid="stTable"] tbody tr th, .stTable tbody tr th { background: #E3F1F2; color: #12263A; font-weight: 600; }
+[data-testid="stTable"] tbody tr:nth-child(even) td, .stTable tbody tr:nth-child(even) td { background: #F4F9FA; }
+[data-testid="stTable"] td, [data-testid="stTable"] th { padding: .5rem .8rem; border-bottom: 1px solid #E3EAEE; }
 </style>
 """
+
