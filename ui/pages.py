@@ -9,7 +9,8 @@ from core.scenarios import SCENARIOS, VARIABLES, NOMBRES, SIMBOLOS, UNIDAD, carg
 from core.validation import validate_spd
 from ui.config import ESTUDIANTE
 from ui.common import (run_current, run_scenario, show_invalid, nota, latex_matrix, fmt_vec,
-                       load_scenario, df_matrix)
+                       load_scenario, df_matrix, tabla)
+from ui import steps
 
 ESCENARIOS = list(SCENARIOS)
 
@@ -59,21 +60,20 @@ def caso():
          "propios similares (escenario ideal) o de escalas muy distintas (escenario mal condicionado).",
          aviso=True)
     st.subheader("Justificación de los tres escenarios")
-    st.dataframe(pd.DataFrame({
+    tabla(pd.DataFrame({
         "Escenario": ESCENARIOS,
         "Qué cambia": [SCENARIOS[e]["resumen"] for e in ESCENARIOS],
-        "Justificación": [SCENARIOS[e]["justificacion"] for e in ESCENARIOS]}),
-        hide_index=True, width="stretch")
+        "Justificación": [SCENARIOS[e]["justificacion"] for e in ESCENARIOS]}))
 
 
 # 3 ─────────────────────────────────────────────────────────────
 def formulacion():
     st.title("Formulación")
     st.subheader("Variables")
-    st.dataframe(pd.DataFrame({
+    tabla(pd.DataFrame({
         "Variable": SIMBOLOS, "Unidad": NOMBRES,
         "Significado financiero": [v["significado"] for v in VARIABLES],
-        "Medida en": UNIDAD}), hide_index=True, width="stretch")
+        "Medida en": UNIDAD}))
     st.subheader("Sistema lineal del escenario activo")
     s = st.session_state
     st.caption(f"Escenario activo: {s.scenario}")
@@ -99,10 +99,11 @@ def formulacion():
             c1.metric("A = Aᵀ", "Sí" if v["symmetric"] else "No")
             c2.metric("Menor autovalor", f"{v['eigenvalues'].min():.4g}")
             c3.metric("Definida positiva", "Sí" if v["positive_definite"] else "No")
-            st.dataframe(pd.DataFrame({
+            tabla(pd.DataFrame({
                 "Menor principal": [f"Δ{k}" for k in range(1, 5)], "Valor": v["minors"],
-                "Autovalor": v["eigenvalues"]}), hide_index=True, width="stretch")
+                "Autovalor": v["eigenvalues"]}), fmt={"Valor": "{:.4f}", "Autovalor": "{:.4f}"})
             st.latex("A = " + latex_matrix(A))
+            steps.pasos_spd(A, v)
 
 
 # 4 ─────────────────────────────────────────────────────────────
@@ -166,8 +167,10 @@ def escenarios():
     if s.scenario in SCENARIOS:
         nota(SCENARIOS[s.scenario]["justificacion"])
     c1, c2 = st.columns([2.2, 1])
-    c1.dataframe(df_matrix(s.A), width="stretch")
-    c2.dataframe(pd.DataFrame({"b": s.b}, index=NOMBRES), width="stretch")
+    with c1:
+        tabla(df_matrix(s.A), hide_index=False)
+    with c2:
+        tabla(pd.DataFrame({"b": s.b}, index=NOMBRES), hide_index=False)
     res = run_current()
     if not res["valid"]:
         return show_invalid(res)
@@ -177,6 +180,8 @@ def escenarios():
     m[2].metric("Iteraciones GC", res["gc"]["iterations"])
     m[3].metric("Iteraciones GCP", res["gcp"]["iterations"])
     st.write("**Solución (GCP):** " + ", ".join(f"{n}: {x:.4f}" for n, x in zip(NOMBRES, res["gcp"]["x"])))
+    st.divider()
+    steps.pasos_escenarios()
 
 
 # 6 ─────────────────────────────────────────────────────────────
@@ -191,10 +196,11 @@ def referencia():
     st.caption(f"Escenario activo: {s.scenario}")
     c1, c2 = st.columns(2)
     c1.markdown("**Factor L**")
-    c1.dataframe(pd.DataFrame(res["L"], index=NOMBRES, columns=SIMBOLOS), width="stretch")
+    with c1:
+        tabla(pd.DataFrame(res["L"], index=NOMBRES, columns=SIMBOLOS), hide_index=False)
     c2.markdown("**Vector intermedio y y solución x**")
-    c2.dataframe(pd.DataFrame({"y": res["y"], f"x ({UNIDAD})": res["x_ref"]}, index=NOMBRES),
-                 width="stretch")
+    with c2:
+        tabla(pd.DataFrame({"y": res["y"], f"x ({UNIDAD})": res["x_ref"]}, index=NOMBRES), hide_index=False)
     err_fact = np.max(np.abs(res["L"] @ res["L"].T - s.A))
     err_lib = np.max(np.abs(res["x_ref"] - np.linalg.solve(s.A, s.b)))
     m = st.columns(2)
@@ -202,6 +208,8 @@ def referencia():
     m[1].metric("máx |x − numpy.linalg.solve|", f"{err_lib:.1e}")
     nota("Si Cholesky se completa sin errores, A es definida positiva. Esta solución es la "
          "«solución numérica de referencia» contra la que se miden los errores del GCP.")
+    st.divider()
+    steps.pasos_cholesky()
 
 
 # 7 ─────────────────────────────────────────────────────────────
@@ -216,13 +224,13 @@ def gcp_vs_gc():
     st.write("El **GC** es el método sin precondicionar y solo sirve de contraste. El **GCP** resuelve "
              "**M zₖ = rₖ** en cada iteración (Algoritmo 2 de Suñagua, 2020).")
     gc, gcp = res["gc"], res["gcp"]
-    st.dataframe(pd.DataFrame({
+    tabla(pd.DataFrame({
         "Método": ["Solución de referencia (Cholesky)", "GC (sin precondicionar)", f"GCP ({res['precond'].name})"],
         "Vector solución": [fmt_vec(res["x_ref"]), fmt_vec(gc["x"]), fmt_vec(gcp["x"])],
         "Iteraciones": ["—", str(gc["iterations"]), str(gcp["iterations"])],
         "Residuo relativo final": ["—", f"{res['resid_gc']:.2e}", f"{res['resid_gcp']:.2e}"],
         "¿Convergió?": ["—", "Sí" if gc["converged"] else "No", "Sí" if gcp["converged"] else "No"],
-    }), hide_index=True, width="stretch")
+    }))
     m = st.columns(2)
     m[0].metric("κ(A)", f"{res['kappa_A']:.4g}")
     m[1].metric("κ(M⁻¹A)", f"{res['kappa_M']:.4g}",
@@ -241,6 +249,8 @@ def gcp_vs_gc():
     nota("En un sistema de solo n = 4 variables, el GC termina en a lo sumo 4 iteraciones por teoría, "
          "por eso la diferencia en iteraciones puede ser pequeña. La ganancia del precondicionador se ve "
          "con claridad en el número de condición κ(M⁻¹A).")
+    st.divider()
+    steps.pasos_gcp()
 
 
 # 8 ─────────────────────────────────────────────────────────────
@@ -253,7 +263,7 @@ def errores():
     df = res["errors"]
     fmt = {"x referencia": "{:.6f}", "x GCP": "{:.6f}", "Error absoluto": "{:.2e}",
            "Error relativo": "{:.2e}", "Error porcentual (%)": "{:.2e}"}
-    st.dataframe(df.style.format(fmt, na_rep="no definido"), hide_index=True, width="stretch")
+    tabla(df, fmt=fmt)
     if df["Error relativo"].isna().any():
         st.caption("Si xref,i = 0, el error relativo no está definido para esa componente.")
     m = st.columns(3)
@@ -281,10 +291,11 @@ def errores():
         filas["Residuo relativo final GCP"].append(f"{r['resid_gcp']:.2e}")
         filas["¿Convergió el algoritmo?"].append("Sí" if r["gcp"]["converged"] else "No")
         filas["Interpretación financiera"].append(SCENARIOS[nombre]["interpretacion"])
-    tabla = pd.DataFrame(filas, index=ESCENARIOS).T
-    tabla.index.name = "Indicador"
-    tabla = tabla.astype(str)
-    st.table(tabla)
+    comparativa = pd.DataFrame(filas, index=ESCENARIOS).T
+    comparativa.index.name = "Indicador"
+    st.table(comparativa.astype(str))
+    st.divider()
+    steps.pasos_errores()
 
 
 # 9 ─────────────────────────────────────────────────────────────
