@@ -4,9 +4,9 @@ Página web interactiva en Streamlit que resuelve un problema de asignación de 
 4 unidades con el método de **Gradientes Conjugados Precondicionado (GCP)** de Suñagua (2020), en tres
 escenarios: ideal, bajo estrés y mal condicionado.
 
-- **Estudiante:** Belen [completa tus apellidos]
+- **Estudiante:** Tarqui Humerez Mayra Belen
 - **Mención:** Ingeniería de Sistemas
-- **Enlace a la página:** [pega aquí tu enlace de Streamlit Cloud]
+- **Enlace a la página:** https://gcp-finanzas-ieukzzzemjwnv2dlofrvhy.streamlit.app/
 
 ## El problema
 
