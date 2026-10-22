@@ -1,8 +1,8 @@
 """Completa tus datos aquí: aparecen en el módulo Inicio."""
 ESTUDIANTE = {
-    "Estudiante": "Belen [completa tus apellidos]",
+    "Estudiante": "Tarqui Humerez Mayra Belen",
     "Mención": "Ingeniería de Sistemas",
     "Asignatura": "Métodos Numéricos",
-    "Docente": "[Nombre de la licenciada]",
-    "Universidad": "[Tu universidad]",
+    "Docente": "Brigida Carvajal Blanco",
+    "Universidad": "Universidad Mayor de San Andres",
 }
