@@ -55,3 +55,23 @@ def fmt_vec(v, sci=False):
 
 def df_matrix(A):
     return pd.DataFrame(A, index=NOMBRES, columns=SIMBOLOS)
+
+
+def latex_vec(v, d=4, sci=False):
+    f = (lambda x: f"{x:.3e}") if sci else (lambda x: f"{x:.{d}f}")
+    return "\\begin{bmatrix} " + " \\\\ ".join(f(x) for x in v) + " \\end{bmatrix}"
+
+
+def latex_mat(M, d=4):
+    return "\\begin{bmatrix} " + " \\\\ ".join(
+        " & ".join(f"{v:.{d}f}" for v in fila) for fila in np.asarray(M)) + " \\end{bmatrix}"
+
+
+def tabla(df, hide_index=True, fmt=None, na_rep="no definido", **_):
+    """Tabla con encabezado de color (se estiliza en style.py)."""
+    if fmt is None:
+        fmt = {c: "{:.6g}" for c in df.select_dtypes("number").columns}
+    sty = df.style.format(fmt, na_rep=na_rep)
+    if hide_index:
+        sty = sty.hide(axis="index")
+    st.table(sty)
