@@ -2,9 +2,10 @@
 import numpy as np
 from .validation import validate_spd
 from .direct import solve_cholesky
-from .cg import pcg, make_preconditioner, condition_precond
+from .cg import pcg, make_preconditioner, condition_precond, steepest_descent
 from .metrics import error_table, relative_residual, cond2
-from .scenarios import NOMBRES
+import pandas as pd
+from .scenarios import NOMBRES, SIMBOLOS
 
 
 def analyze(A, b, x0=None, tol=1e-6, max_iter=1000, precond="Jacobi", omega=1.0, names=None):
@@ -29,3 +30,37 @@ def analyze(A, b, x0=None, tol=1e-6, max_iter=1000, precond="Jacobi", omega=1.0,
         "resid_gcp": relative_residual(A, b, gcp["x"]),
         "resid_gc": relative_residual(A, b, gc["x"]),
     }
+
+
+def compare_methods(A, b, x0=None, tol=1e-6, max_iter=1000, omega=1.0):
+    """Tabla con los resultados de todos los métodos: Cholesky, máximo descenso, GC, GCP-Jacobi y GCP-SSOR."""
+    A = np.asarray(A, dtype=float)
+    b = np.asarray(b, dtype=float)
+    if not validate_spd(A)["ok"]:
+        return None
+    x_ref, _, _ = solve_cholesky(A, b)
+    kA = cond2(A)
+
+    def fila(nombre, x, it, conv, kappa, referencia=False):
+        ea = np.abs(x_ref - x)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            ep = np.where(x_ref != 0, ea / np.abs(x_ref) * 100, np.nan)
+        d = {"Método": nombre}
+        d.update({SIMBOLOS[i]: float(x[i]) for i in range(len(x))})
+        d.update({"Iteraciones": it, "Residuo relativo": relative_residual(A, b, x),
+                  "Error absoluto máx.": np.nan if referencia else float(ea.max()),
+                  "Error % máx.": np.nan if referencia else float(np.nanmax(ep)),
+                  "Número de condición": kappa, "¿Convergió?": conv})
+        return d
+
+    filas = [fila("Cholesky (referencia)", x_ref, np.nan, "Sí (método directo)", kA, referencia=True)]
+    sd = steepest_descent(A, b, x0, tol, max(max_iter, 20000))
+    filas.append(fila("Máximo descenso", sd["x"], sd["iterations"], "Sí" if sd["converged"] else "No", kA))
+    gc = pcg(A, b, x0, make_preconditioner(A, "Ninguno"), tol, max_iter)
+    filas.append(fila("Gradientes Conjugados (GC)", gc["x"], gc["iterations"], "Sí" if gc["converged"] else "No", kA))
+    for tipo, nombre in (("Jacobi", "GCP con Jacobi"), ("SSOR", f"GCP con SSOR (ω = {omega:g})")):
+        M = make_preconditioner(A, tipo, omega)
+        r = pcg(A, b, x0, M, tol, max_iter)
+        filas.append(fila(nombre, r["x"], r["iterations"], "Sí" if r["converged"] else "No",
+                          condition_precond(A, M)))
+    return pd.DataFrame(filas)

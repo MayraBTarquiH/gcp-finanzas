@@ -40,3 +40,20 @@ def test_pasos_de_cholesky_tienen_una_linea_por_elemento():
     assert len(cholesky_steps(A, r["L"])) == 10          # 4 + 3 + 2 + 1 elementos de L
     assert len(forward_steps(r["L"], b, r["y"])) == 4
     assert len(backward_steps(r["L"], r["y"], r["x_ref"])) == 4
+
+
+def test_tabla_de_todos_los_metodos():
+    from core.analysis import compare_methods
+    A, b = cargar("Mal condicionado")
+    df = compare_methods(A, b)
+    assert len(df) == 5
+    it = dict(zip(df["Método"], df["Iteraciones"]))
+    assert it["Máximo descenso"] > 100 * it["Gradientes Conjugados (GC)"]
+    assert (df["Error absoluto máx."].dropna() < 1e-2).all()
+
+
+def test_sistema_de_ecuaciones_en_latex():
+    from ui.common import latex_system
+    A, b = cargar("Ideal")
+    txt = latex_system(A, b)
+    assert "10x_1 + 2x_2 + x_3 + x_4 &= 60" in txt

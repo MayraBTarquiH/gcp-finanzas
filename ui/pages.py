@@ -9,7 +9,7 @@ from core.scenarios import SCENARIOS, VARIABLES, NOMBRES, SIMBOLOS, UNIDAD, carg
 from core.validation import validate_spd
 from ui.config import ESTUDIANTE
 from ui.common import (run_current, run_scenario, show_invalid, nota, latex_matrix, fmt_vec,
-                       load_scenario, df_matrix, tabla)
+                       load_scenario, df_matrix, tabla, latex_system)
 from ui import steps
 
 ESCENARIOS = list(SCENARIOS)
@@ -42,6 +42,18 @@ def inicio():
 # 2 ─────────────────────────────────────────────────────────────
 def caso():
     st.title("Caso de estudio")
+    st.subheader("Enunciado del problema")
+    nota(
+        "Una empresa dispone de un presupuesto anual de tecnología que debe repartir entre cuatro unidades: "
+        "<b>x₁</b> desarrollo de software, <b>x₂</b> infraestructura y nube, <b>x₃</b> ciberseguridad y "
+        "<b>x₄</b> soporte y capacitación (en decenas de miles de Bs). El reparto óptimo es el que minimiza el "
+        "costo total menos el beneficio esperado, lo que conduce a un sistema lineal <b>Ax = b</b> con A "
+        "simétrica y definida positiva de 4 × 4.<br><br>"
+        "<b>Se pide:</b> (a) plantear el sistema en tres escenarios: ideal, bajo estrés financiero y mal "
+        "condicionado; (b) obtener la solución de referencia con el método directo de Cholesky; "
+        "(c) resolverlo con Gradientes Conjugados (GC) y Gradientes Conjugados Precondicionado (GCP) con "
+        "tolerancia 10⁻⁶; (d) calcular los errores, el residuo y los números de condición κ(A) y κ(M⁻¹A); "
+        "(e) comparar los resultados de todos los métodos e interpretarlos financieramente.")
     st.subheader("Contexto financiero")
     st.write(
         "Una empresa mediana de servicios en Bolivia debe decidir cuánto del presupuesto anual de TI "
@@ -77,6 +89,9 @@ def formulacion():
     st.subheader("Sistema lineal del escenario activo")
     s = st.session_state
     st.caption(f"Escenario activo: {s.scenario}")
+    st.markdown("**Sistema de ecuaciones** (una ecuación por unidad):")
+    st.latex(latex_system(s.A, s.b))
+    st.markdown("**En forma matricial:**")
     xvec = r"\begin{bmatrix} x_1 \\ x_2 \\ x_3 \\ x_4 \end{bmatrix}"
     st.latex(r"A\,x = b \quad\Rightarrow\quad " + latex_matrix(s.A) + xvec + " = " + latex_matrix(s.b))
     st.subheader("Interpretación de los coeficientes")
@@ -93,7 +108,7 @@ def formulacion():
     tabs = st.tabs(ESCENARIOS)
     for tab, nombre in zip(tabs, ESCENARIOS):
         with tab:
-            A, _ = cargar(nombre)
+            A, b = cargar(nombre)
             v = validate_spd(A)
             c1, c2, c3 = st.columns(3)
             c1.metric("A = Aᵀ", "Sí" if v["symmetric"] else "No")
@@ -102,7 +117,10 @@ def formulacion():
             tabla(pd.DataFrame({
                 "Menor principal": [f"Δ{k}" for k in range(1, 5)], "Valor": v["minors"],
                 "Autovalor": v["eigenvalues"]}), fmt={"Valor": "{:.4f}", "Autovalor": "{:.4f}"})
-            st.latex("A = " + latex_matrix(A))
+            st.markdown("**Sistema de ecuaciones**")
+            st.latex(latex_system(A, b))
+            st.markdown("**Matriz A y vector b**")
+            st.latex("A = " + latex_matrix(A) + r", \qquad b = " + latex_matrix(b))
             steps.pasos_spd(A, v)
 
 
@@ -270,6 +288,8 @@ def errores():
     m[0].metric("Residuo relativo ‖b − Ax‖/‖b‖ (GCP)", f"{res['resid_gcp']:.2e}")
     m[1].metric("Máximo error absoluto", f"{df['Error absoluto'].max():.2e}")
     m[2].metric("¿Convergió el GCP?", "Sí" if res["gcp"]["converged"] else "No")
+    steps.comparacion_metodos()
+    st.divider()
     st.subheader("Tabla comparativa de los tres escenarios")
     st.caption("Calculada en vivo con los parámetros actuales (x₀, tolerancia y precondicionador).")
     filas = {k: [] for k in ["Solución numérica de referencia", "Solución GCP", "Error absoluto (Ea)",

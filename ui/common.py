@@ -75,3 +75,21 @@ def tabla(df, hide_index=True, fmt=None, na_rep="no definido", **_):
     if hide_index:
         sty = sty.hide(axis="index")
     st.table(sty)
+
+
+def latex_system(A, b):
+    """Sistema Ax = b escrito ecuación por ecuación."""
+    filas = []
+    for i in range(A.shape[0]):
+        t = ""
+        for j in range(A.shape[1]):
+            a = A[i, j]
+            if a == 0:
+                continue
+            coef = "" if abs(a) == 1 else f"{abs(a):g}"
+            if t == "":
+                t = ("-" if a < 0 else "") + f"{coef}x_{j+1}"
+            else:
+                t += f" {'-' if a < 0 else '+'} {coef}x_{j+1}"
+        filas.append(f"{t} &= {b[i]:g}")
+    return "\\begin{aligned} " + " \\\\ ".join(filas) + " \\end{aligned}"

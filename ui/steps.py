@@ -4,7 +4,7 @@ import pandas as pd
 import streamlit as st
 from scipy.linalg import eigh
 
-from core.analysis import analyze
+from core.analysis import analyze, compare_methods
 from core.direct import cholesky_steps, forward_steps, backward_steps
 from core.scenarios import SCENARIOS, NOMBRES, cargar
 from ui.common import latex_matrix, latex_vec, latex_mat, tabla, nota, show_invalid
@@ -206,3 +206,20 @@ def _bloque_errores(A, b, res):
 def pasos_errores():
     st.subheader("Procedimiento paso a paso")
     _por_escenario(_bloque_errores)
+
+
+# ───────────────────────── Comparación de todos los métodos
+def _bloque_comparacion(A, b, res):
+    s = st.session_state
+    df = compare_methods(A, b, np.array(s.x0, float), s.tol, s.max_iter, s.omega)
+    fmt = {c: "{:.6f}" for c in ["x₁", "x₂", "x₃", "x₄"]}
+    fmt.update({"Iteraciones": "{:.0f}", "Residuo relativo": "{:.2e}", "Error absoluto máx.": "{:.2e}",
+                "Error % máx.": "{:.2e}", "Número de condición": "{:.4g}"})
+    tabla(df, fmt=fmt, na_rep="—")
+    st.caption("Los errores se miden contra Cholesky. El número de condición es κ(A) para Cholesky, máximo "
+               "descenso y GC, y κ(M⁻¹A) para los GCP. El máximo descenso se deja iterar hasta 20 000 pasos.")
+
+
+def comparacion_metodos():
+    st.subheader("Tabla de comparación de todos los métodos")
+    _por_escenario(_bloque_comparacion)
