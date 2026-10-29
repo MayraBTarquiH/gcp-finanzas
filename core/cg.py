@@ -84,24 +84,6 @@ def pcg(A, b, x0=None, precond=None, tol=1e-6, max_iter=1000):
             "residual": hist[-1], "trace": trace}
 
 
-def steepest_descent(A, b, x0=None, tol=1e-6, max_iter=100000):
-    """Método del gradiente o de máximo descenso (sección 2 del artículo), para comparar."""
-    A = np.asarray(A, dtype=float)
-    b = np.asarray(b, dtype=float)
-    x = np.zeros(len(b)) if x0 is None else np.array(x0, dtype=float)
-    nb = np.linalg.norm(b) or 1.0
-    r = b - A @ x
-    k = 0
-    while np.linalg.norm(r) / nb >= tol and k < max_iter:
-        Ar = A @ r
-        t = (r @ r) / (r @ Ar)
-        x = x + t * r
-        r = r - t * Ar
-        k += 1
-    rel = np.linalg.norm(r) / nb
-    return {"x": x, "iterations": k, "converged": bool(rel < tol), "residual": float(rel)}
-
-
 def condition_precond(A, precond):
     """κ(M⁻¹A) a partir de los autovalores del problema generalizado A v = λ M v."""
     w = eigh(np.asarray(A, float), precond.matrix, eigvals_only=True)

@@ -2,7 +2,7 @@
 import numpy as np
 from .validation import validate_spd
 from .direct import solve_cholesky
-from .cg import pcg, make_preconditioner, condition_precond, steepest_descent
+from .cg import pcg, make_preconditioner, condition_precond
 from .metrics import error_table, relative_residual, cond2
 import pandas as pd
 from .scenarios import NOMBRES, SIMBOLOS
@@ -32,8 +32,8 @@ def analyze(A, b, x0=None, tol=1e-6, max_iter=1000, precond="Jacobi", omega=1.0,
     }
 
 
-def compare_methods(A, b, x0=None, tol=1e-6, max_iter=1000, omega=1.0):
-    """Tabla con los resultados de todos los métodos: Cholesky, máximo descenso, GC, GCP-Jacobi y GCP-SSOR."""
+def compare_methods(A, b, x0=None, tol=1e-6, max_iter=1000, precond="Jacobi", omega=1.0):
+    """Tabla con los resultados de los tres métodos: Cholesky, GC y GCP."""
     A = np.asarray(A, dtype=float)
     b = np.asarray(b, dtype=float)
     if not validate_spd(A)["ok"]:
@@ -54,13 +54,10 @@ def compare_methods(A, b, x0=None, tol=1e-6, max_iter=1000, omega=1.0):
         return d
 
     filas = [fila("Cholesky (referencia)", x_ref, np.nan, "Sí (método directo)", kA, referencia=True)]
-    sd = steepest_descent(A, b, x0, tol, max(max_iter, 20000))
-    filas.append(fila("Máximo descenso", sd["x"], sd["iterations"], "Sí" if sd["converged"] else "No", kA))
     gc = pcg(A, b, x0, make_preconditioner(A, "Ninguno"), tol, max_iter)
     filas.append(fila("Gradientes Conjugados (GC)", gc["x"], gc["iterations"], "Sí" if gc["converged"] else "No", kA))
-    for tipo, nombre in (("Jacobi", "GCP con Jacobi"), ("SSOR", f"GCP con SSOR (ω = {omega:g})")):
-        M = make_preconditioner(A, tipo, omega)
-        r = pcg(A, b, x0, M, tol, max_iter)
-        filas.append(fila(nombre, r["x"], r["iterations"], "Sí" if r["converged"] else "No",
-                          condition_precond(A, M)))
+    M = make_preconditioner(A, precond, omega)
+    r = pcg(A, b, x0, M, tol, max_iter)
+    filas.append(fila(f"GC Precondicionado (GCP, {M.name})", r["x"], r["iterations"],
+                      "Sí" if r["converged"] else "No", condition_precond(A, M)))
     return pd.DataFrame(filas)
