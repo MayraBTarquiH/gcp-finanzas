@@ -209,7 +209,7 @@ def referencia():
     if not res["valid"]:
         return show_invalid(res)
     s = st.session_state
-    st.write("Se factoriza **A = L Lᵀ** (programado a mano, sin librerías) y se resuelven dos sistemas "
+    st.write("Se factoriza **A = L Lᵀ** (programado sin librerías) y se resuelven dos sistemas "
              "triangulares: **L y = b** por sustitución hacia adelante y **Lᵀ x = y** hacia atrás.")
     st.caption(f"Escenario activo: {s.scenario}")
     c1, c2 = st.columns(2)
