@@ -211,15 +211,27 @@ def pasos_errores():
 # ───────────────────────── Comparación de todos los métodos
 def _bloque_comparacion(A, b, res):
     s = st.session_state
-    df = compare_methods(A, b, np.array(s.x0, float), s.tol, s.max_iter, s.omega)
+    df = compare_methods(A, b, np.array(s.x0, float), s.tol, s.max_iter, s.precond, s.omega)
     fmt = {c: "{:.6f}" for c in ["x₁", "x₂", "x₃", "x₄"]}
     fmt.update({"Iteraciones": "{:.0f}", "Residuo relativo": "{:.2e}", "Error absoluto máx.": "{:.2e}",
                 "Error % máx.": "{:.2e}", "Número de condición": "{:.4g}"})
+    st.markdown("**Resumen por método**")
     tabla(df, fmt=fmt, na_rep="—")
-    st.caption("Los errores se miden contra Cholesky. El número de condición es κ(A) para Cholesky, máximo "
-               "descenso y GC, y κ(M⁻¹A) para los GCP. El máximo descenso se deja iterar hasta 20 000 pasos.")
+    st.markdown("**Resultados por variable: Cholesky, GC y GCP lado a lado**")
+    xr, xc, xp = res["x_ref"], res["gc"]["x"], res["gcp"]["x"]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        pc = np.where(xr != 0, np.abs(xr - xc) / np.abs(xr) * 100, np.nan)
+        pp = np.where(xr != 0, np.abs(xr - xp) / np.abs(xr) * 100, np.nan)
+    tabla(pd.DataFrame({
+        "Variable": NOMBRES, "Cholesky (referencia)": xr, "GC": xc, "GCP": xp,
+        "Eₐ GC": np.abs(xr - xc), "Eₐ GCP": np.abs(xr - xp),
+        "Eₚ GC (%)": pc, "Eₚ GCP (%)": pp}),
+        fmt={"Cholesky (referencia)": "{:.6f}", "GC": "{:.6f}", "GCP": "{:.6f}",
+             "Eₐ GC": "{:.2e}", "Eₐ GCP": "{:.2e}", "Eₚ GC (%)": "{:.2e}", "Eₚ GCP (%)": "{:.2e}"})
+    st.caption("Los errores se miden contra la solución de Cholesky. El número de condición es κ(A) para "
+               "Cholesky y GC, y κ(M⁻¹A) para el GCP.")
 
 
 def comparacion_metodos():
-    st.subheader("Tabla de comparación de todos los métodos")
+    st.subheader("Tabla de comparación: Cholesky, GC y GCP")
     _por_escenario(_bloque_comparacion)
