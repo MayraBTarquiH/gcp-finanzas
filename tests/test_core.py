@@ -42,14 +42,15 @@ def test_pasos_de_cholesky_tienen_una_linea_por_elemento():
     assert len(backward_steps(r["L"], r["y"], r["x_ref"])) == 4
 
 
-def test_tabla_de_todos_los_metodos():
+def test_tabla_de_los_tres_metodos():
     from core.analysis import compare_methods
     A, b = cargar("Mal condicionado")
     df = compare_methods(A, b)
-    assert len(df) == 5
-    it = dict(zip(df["Método"], df["Iteraciones"]))
-    assert it["Máximo descenso"] > 100 * it["Gradientes Conjugados (GC)"]
-    assert (df["Error absoluto máx."].dropna() < 1e-2).all()
+    assert list(df["Método"])[0].startswith("Cholesky") and len(df) == 3
+    it = df["Iteraciones"].tolist()
+    assert it[2] <= it[1]                                   # GCP <= GC
+    assert df["Número de condición"].iloc[2] < df["Número de condición"].iloc[1]
+    assert (df["Error absoluto máx."].dropna() < 1e-6).all()
 
 
 def test_sistema_de_ecuaciones_en_latex():
