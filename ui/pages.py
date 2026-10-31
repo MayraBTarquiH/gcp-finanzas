@@ -125,46 +125,132 @@ def formulacion():
 
 
 # 4 ─────────────────────────────────────────────────────────────
+CORTOS = ["Desarrollo", "Infraestructura", "Ciberseguridad", "Soporte"]
+COLS = [f"{SIMBOLOS[i]} · {CORTOS[i]}" for i in range(4)]
+FILAS = [f"Ecuación {i + 1} · {NOMBRES[i]}" for i in range(4)]
+
+
+def _hacer_simetrica():
+    s = st.session_state
+    A = np.triu(s.A) + np.triu(s.A, 1).T       # copia el triángulo superior al inferior
+    s.A, s.A_base = A, A.copy()
+    s.b_base = s.b.copy()
+    s.editor_v += 1
+
+
 def entrada():
     st.title("Entrada de datos")
     s = st.session_state
-    st.write("Edita los coeficientes y todo se recalcula en los demás módulos. Al editar, el escenario "
-             "pasa a «Personalizado».")
-    dfA = pd.DataFrame(s.A_base, index=NOMBRES, columns=SIMBOLOS)
-    dfb = pd.DataFrame({"b": s.b_base}, index=NOMBRES)
-    c1, c2 = st.columns([2.2, 1])
+
+    st.subheader("Cómo usar esta pantalla")
+    nota("<b>1. Elige un punto de partida</b> con los botones de abajo (o deja los datos que ya están).<br>"
+         "<b>2. Cambia los números que quieras</b> en las tablas de color: haz <b>doble clic en una casilla</b>, "
+         "escribe el valor nuevo y presiona <b>Enter</b>.<br>"
+         "<b>3. Mira los resultados:</b> todos los demás módulos se recalculan solos con tus datos. "
+         "Si los datos no son válidos, aquí mismo aparece un aviso en rojo explicando el problema.")
+
+    st.subheader("¿Qué son x₁, x₂, x₃ y x₄?")
+    st.write(f"Son **los montos de presupuesto que se reparten** entre las cuatro unidades, medidos en "
+             f"**{UNIDAD}** (por ejemplo, x = 4,6 equivale a Bs 46.000).")
+    tabla(pd.DataFrame({
+        "Variable": SIMBOLOS, "Unidad de la empresa": NOMBRES,
+        "Qué representa": [v["significado"] for v in VARIABLES]}))
+
+    st.subheader("Punto de partida")
+    cols = st.columns(3)
+    for col, nombre in zip(cols, ESCENARIOS):
+        col.button(f"Cargar «{nombre}»", key=f"ent_{nombre}", on_click=load_scenario, args=(nombre,),
+                   width="stretch", type="primary" if s.scenario == nombre else "secondary")
+    st.caption(f"Datos actuales: **{s.scenario}**. Si cambias cualquier casilla pasan a llamarse «Personalizado».")
+
+    st.subheader("Datos del sistema Ax = b")
+    st.write("Las casillas **editables** son todas las de las dos tablas de abajo. "
+             "Cada **fila** es la ecuación de una unidad.")
+    dfA = pd.DataFrame(s.A_base, index=FILAS, columns=COLS)
+    dfb = pd.DataFrame({"b · Beneficio": s.b_base}, index=FILAS)
+    cfgA = {COLS[i]: st.column_config.NumberColumn(
+        COLS[i], format="%g", step=0.1,
+        help=f"Coeficientes de {NOMBRES[i]} en cada ecuación. En la diagonal es su costo propio; "
+             "fuera de la diagonal, su interacción con otra unidad.") for i in range(4)}
+    cfgb = {"b · Beneficio": st.column_config.NumberColumn(
+        "b · Beneficio", format="%g", step=1.0,
+        help="Beneficio marginal esperado de invertir en esa unidad. Súbelo para simular que esa unidad "
+             "necesita más presupuesto.")}
+    c1, c2 = st.columns([2.6, 1])
     with c1:
-        st.markdown("**Matriz A**")
-        eA = st.data_editor(dfA, key=f"edA_{s.editor_v}", width="stretch")
+        st.markdown("**Matriz A** · costos propios e interacciones")
+        eA = st.data_editor(dfA, key=f"edA_{s.editor_v}", column_config=cfgA, width="stretch")
     with c2:
-        st.markdown("**Vector b**")
-        eb = st.data_editor(dfb, key=f"edb_{s.editor_v}", width="stretch")
-    A_new, b_new = eA.to_numpy(dtype=float), eb["b"].to_numpy(dtype=float)
+        st.markdown("**Vector b** · beneficio esperado")
+        eb = st.data_editor(dfb, key=f"edb_{s.editor_v}", column_config=cfgb, width="stretch")
+    A_new, b_new = eA.to_numpy(dtype=float), eb.iloc[:, 0].to_numpy(dtype=float)
     if not (np.array_equal(A_new, s.A, equal_nan=True) and np.array_equal(b_new, s.b, equal_nan=True)):
         s.A, s.b = A_new, b_new
         if not (np.array_equal(A_new, s.A_base, equal_nan=True) and np.array_equal(b_new, s.b_base, equal_nan=True)):
             s.scenario = "Personalizado"
+
+    e1, e2 = st.columns(2)
+    with e1:
+        st.markdown("**¿Qué significa cada casilla de A?**")
+        st.markdown(
+            "- **Casilla de la diagonal** (por ejemplo, fila 1 · columna x₁): *costo propio* de esa unidad. "
+            "Mientras más alto, más caro es cada Bs adicional que se le asigna.\n"
+            "- **Casilla fuera de la diagonal** (por ejemplo, fila 1 · columna x₂): *interacción* entre dos "
+            "unidades, porque comparten recursos o necesitan coordinarse.\n"
+            "- **Regla de simetría:** la casilla (fila 1, columna x₂) debe valer lo mismo que la casilla "
+            "(fila 2, columna x₁).")
+    with e2:
+        st.markdown("**Prueba estas ideas**")
+        st.markdown(
+            "- Sube el **b de Ciberseguridad** (por ejemplo de 30 a 45) y mira cómo crece su presupuesto x₃.\n"
+            "- Sube un **número de la diagonal** y esa unidad recibirá menos presupuesto.\n"
+            "- Cambia solo una casilla fuera de la diagonal (sin tocar su simétrica) para ver cómo la página "
+            "**detecta el error** sin dejar de funcionar.")
+
     v = validate_spd(s.A)
     if v["ok"]:
-        st.success("A es simétrica y definida positiva. Los métodos se pueden ejecutar.")
+        st.success("Los datos son válidos: A es simétrica y definida positiva. Los métodos se pueden ejecutar.")
     else:
         for e in v["errors"]:
             st.error(e)
-    st.markdown("**Parámetros de ejecución**")
-    st.write("Vector inicial x₀ (por defecto cero):")
+        if not v["symmetric"] and np.all(np.isfinite(s.A)):
+            st.button("Hacer A simétrica automáticamente (copiar la parte superior hacia abajo)",
+                      on_click=_hacer_simetrica)
+    st.button("Restablecer los datos del escenario cargado", on_click=lambda: load_scenario(
+        s.scenario if s.scenario in SCENARIOS else "Ideal"))
+
+    st.subheader("Parámetros de ejecución")
+    st.write("Controlan **cómo** se resuelve el sistema, no los datos del problema.")
+    st.markdown("**Punto de partida de la búsqueda, x₀.** Es la primera aproximación con la que el algoritmo "
+                "empieza a iterar. Lo normal es dejar todo en 0.")
     cols = st.columns(4)
     for i, col in enumerate(cols):
-        s.x0[i] = col.number_input(SIMBOLOS[i], value=float(s.x0[i]), key=f"x0w_{i}", format="%.4f")
+        s.x0[i] = col.number_input(f"{SIMBOLOS[i]} · {CORTOS[i]}", value=float(s.x0[i]), key=f"x0w_{i}",
+                                   format="%.4f", help="Valor inicial de esta variable (normalmente 0).")
     p1, p2, p3, p4 = st.columns(4)
-    s.tol = p1.select_slider("Tolerancia ‖rₖ‖/‖b‖", options=[1e-4, 1e-6, 1e-8, 1e-10], value=s.tol,
-                             format_func=lambda v: f"{v:.0e}")
-    s.max_iter = p2.number_input("Iteraciones máximas", 1, 10000, int(s.max_iter))
-    s.precond = p3.selectbox("Precondicionador", PRECONDICIONADORES,
-                             index=PRECONDICIONADORES.index(s.precond))
+    s.tol = p1.select_slider("Tolerancia (precisión)", options=[1e-4, 1e-6, 1e-8, 1e-10], value=s.tol,
+                             format_func=lambda v: f"{v:.0e}",
+                             help="El algoritmo se detiene cuando ‖rₖ‖/‖b‖ es menor que este valor. "
+                                  "Más pequeña = más preciso y más iteraciones.")
+    s.max_iter = p2.number_input("Iteraciones máximas", 1, 10000, int(s.max_iter),
+                                 help="Límite de seguridad para que el algoritmo no itere sin parar.")
+    s.precond = p3.selectbox("Precondicionador", PRECONDICIONADORES, index=PRECONDICIONADORES.index(s.precond),
+                             help="Jacobi: divide por la diagonal de A (recomendado cuando las escalas son muy "
+                                  "distintas). SSOR: usa también la parte triangular de A. Ninguno: GC simple.")
     if s.precond == "SSOR":
-        s.omega = p4.slider("ω (SSOR)", 0.1, 1.9, float(s.omega), 0.1)
-    st.button("Restablecer datos del escenario cargado", on_click=lambda: load_scenario(
-        s.scenario if s.scenario in SCENARIOS else "Ideal"))
+        s.omega = p4.slider("ω (SSOR)", 0.1, 1.9, float(s.omega), 0.1,
+                            help="Parámetro de relajación del precondicionador SSOR (ω = 1 es lo habitual).")
+
+    st.subheader("Resultado con tus datos")
+    res = run_current()
+    if not res["valid"]:
+        return show_invalid(res)
+    m = st.columns(4)
+    for i, col in enumerate(m):
+        col.metric(f"{SIMBOLOS[i]} · {CORTOS[i]}", f"{res['gcp']['x'][i]:.4f}")
+    st.caption(f"Presupuesto óptimo calculado con el GCP ({res['precond'].name}), en {UNIDAD}. "
+               f"Iteraciones: GC = {res['gc']['iterations']}, GCP = {res['gcp']['iterations']}. "
+               "Mira los demás módulos del menú para ver el procedimiento, los errores y la comparación de métodos.")
 
 
 # 5 ─────────────────────────────────────────────────────────────
@@ -209,7 +295,7 @@ def referencia():
     if not res["valid"]:
         return show_invalid(res)
     s = st.session_state
-    st.write("Se factoriza **A = L Lᵀ** (programado sin librerías) y se resuelven dos sistemas "
+    st.write("Se factoriza **A = L Lᵀ** (programado a mano, sin librerías) y se resuelven dos sistemas "
              "triangulares: **L y = b** por sustitución hacia adelante y **Lᵀ x = y** hacia atrás.")
     st.caption(f"Escenario activo: {s.scenario}")
     c1, c2 = st.columns(2)
