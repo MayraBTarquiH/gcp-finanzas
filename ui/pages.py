@@ -143,7 +143,7 @@ def entrada():
     s = st.session_state
 
     st.subheader("Cómo usar esta pantalla")
-    nota("<b>1. Elige un punto de partida</b> con los botones de abajo (o deja los datos que ya están).<br>"
+    nota("<b>1. Elige el escenario</b> en el módulo «5. Tres escenarios» (o deja los datos que ya están).<br>"
          "<b>2. Cambia los números que quieras</b> en las tablas de color: haz <b>doble clic en una casilla</b>, "
          "escribe el valor nuevo y presiona <b>Enter</b>.<br>"
          "<b>3. Mira los resultados:</b> todos los demás módulos se recalculan solos con tus datos. "
@@ -156,12 +156,8 @@ def entrada():
         "Variable": SIMBOLOS, "Unidad de la empresa": NOMBRES,
         "Qué representa": [v["significado"] for v in VARIABLES]}))
 
-    st.subheader("Punto de partida")
-    cols = st.columns(3)
-    for col, nombre in zip(cols, ESCENARIOS):
-        col.button(f"Cargar «{nombre}»", key=f"ent_{nombre}", on_click=load_scenario, args=(nombre,),
-                   width="stretch", type="primary" if s.scenario == nombre else "secondary")
-    st.caption(f"Datos actuales: **{s.scenario}**. Si cambias cualquier casilla pasan a llamarse «Personalizado».")
+    st.caption(f"Datos cargados ahora: **{s.scenario}**. Para cambiar de escenario usa el módulo "
+               "«5. Tres escenarios». Si editas cualquier casilla, pasan a llamarse «Personalizado».")
 
     st.subheader("Datos del sistema Ax = b")
     st.write("Las casillas **editables** son todas las de las dos tablas de abajo. "
