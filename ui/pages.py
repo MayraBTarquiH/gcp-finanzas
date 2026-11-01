@@ -217,7 +217,7 @@ def entrada():
     st.subheader("Datos del sistema Ax = b")
     
     st.caption(
-        f"Las variables x₁·Desarrollo, x₂·Infraestructura, x₃·Ciberseguridad y x₄·Soporte representan los presupuestos "
+        f"Las variables  **x₁·Desarrollo, x₂·Infraestructura, x₃·Ciberseguridad y x₄·Soporte**  representan los presupuestos "
         f"asignados a cada unidad, expresados en {UNIDAD}."
     )
 
