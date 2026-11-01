@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 import altair as alt
 import numpy as np
 import pandas as pd
@@ -138,6 +140,44 @@ def _hacer_simetrica():
     s.editor_v += 1
 
 
+def _firma_datos():
+    """Resume todo lo que el usuario puede cambiar, para detectar cuándo hay que recalcular."""
+    s = st.session_state
+    return (s.A.tobytes(), s.b.tobytes(), tuple(s.x0), s.tol, int(s.max_iter), s.precond, float(s.omega))
+
+
+def _registrar_calculo(clic):
+    """Guarda la hora del último cálculo y el motivo (botón, cambio de datos o cálculo inicial)."""
+    s = st.session_state
+    ahora = datetime.now(timezone(timedelta(hours=-4)))          # hora de Bolivia (UTC-4)
+    firma = _firma_datos()
+    if clic:
+        s.calculo = {"hora": ahora, "motivo": "Recalculado con el botón «Calcular con estos datos»."}
+    elif s.get("firma") is None:
+        s.calculo = {"hora": ahora, "motivo": "Cálculo inicial con los datos cargados."}
+    elif firma != s.firma:
+        s.calculo = {"hora": ahora, "motivo": "Se detectaron cambios en tus datos y se recalculó automáticamente."}
+    s.firma = firma
+
+
+def _caja_confirmacion(res, con_nota=True):
+    """Cuadro verde que confirma con qué datos y a qué hora se calcularon los resultados."""
+    s = st.session_state
+    c = s.calculo
+    x0 = ", ".join(f"{v:g}" for v in s.x0)
+    st.success(
+        f"**Resultados actualizados a las {c['hora']:%H:%M:%S}** (hora de Bolivia). {c['motivo']}\n\n"
+        f"**Datos usados:** escenario **{s.scenario}** · tolerancia {s.tol:.0e} · precondicionador "
+        f"{res['precond'].name} · máximo {int(s.max_iter)} iteraciones · x₀ = [{x0}]\n\n"
+        f"**Resultado:** " + " · ".join(f"{SIMBOLOS[i]} = {res['gcp']['x'][i]:.4f}" for i in range(4)) +
+        f"\n\n**GC:** {res['gc']['iterations']} iteraciones · **GCP:** {res['gcp']['iterations']} iteraciones · "
+        f"**Residuo final:** {res['resid_gcp']:.2e} · "
+        f"**¿Convergió?** {'Sí' if res['gcp']['converged'] else 'No'}")
+    if con_nota:
+        st.caption("x₀, la tolerancia y el precondicionador cambian el camino que sigue el algoritmo, no la solución. "
+                   "Para cambiar la solución modifica A o b (o pon iteraciones máximas muy bajas).")
+
+
 def entrada():
     st.title("Entrada de datos")
     s = st.session_state
@@ -155,6 +195,10 @@ def entrada():
         f"Escenario activo: **{s.scenario}**. "
         "Al modificar los datos, el escenario pasará a ser Personalizado."
     )
+
+    arriba = st.container()
+    with arriba:
+        clic_arriba = st.button("Calcular con estos datos", key="calc_arriba", type="primary")
     
     st.subheader("Datos del sistema Ax = b")
     
@@ -262,6 +306,8 @@ def entrada():
     st.subheader("Resultado con tus datos")
     res = run_current()
     if not res["valid"]:
+        with arriba:
+            st.warning("No se pudo recalcular porque los datos no son válidos. Revisa el aviso en rojo más abajo.")
         return show_invalid(res)
     m = st.columns(4)
     for i, col in enumerate(m):
@@ -269,6 +315,11 @@ def entrada():
     st.caption(f"Presupuesto óptimo calculado con el GCP ({res['precond'].name}), en {UNIDAD}. "
                f"Iteraciones: GC = {res['gc']['iterations']}, GCP = {res['gcp']['iterations']}. "
                "Mira los demás módulos del menú para ver el procedimiento, los errores y la comparación de métodos.")
+    clic_abajo = st.button("Calcular con estos datos", key="calc_abajo", type="primary")
+    _registrar_calculo(clic_arriba or clic_abajo)
+    with arriba:
+        _caja_confirmacion(res, con_nota=False)
+    _caja_confirmacion(res)
 
 
 # 5 ─────────────────────────────────────────────────────────────
