@@ -140,6 +140,20 @@ def _hacer_simetrica():
     s.editor_v += 1
 
 
+CONFIG_PREDETERMINADA = {"tol": 1e-6, "max_iter": 1000, "precond": "Jacobi", "omega": 1.0}
+
+
+def _restablecer_configuracion():
+    """Devuelve x₀, tolerancia, iteraciones máximas y precondicionador a sus valores predeterminados."""
+    s = st.session_state
+    s.x0 = [0.0] * 4
+    for i in range(4):
+        s[f"x0w_{i}"] = 0.0            # estado de las casillas de x₀
+    for k, v in CONFIG_PREDETERMINADA.items():
+        s[k] = v
+    s["tol_w"], s["maxit_w"], s["precond_w"], s["omega_w"] = 1e-6, 1000, "Jacobi", 1.0  # estado de los controles
+
+
 def _firma_datos():
     """Resume todo lo que el usuario puede cambiar, para detectar cuándo hay que recalcular."""
     s = st.session_state
@@ -207,7 +221,7 @@ def entrada():
         f"asignados a cada unidad, expresados en {UNIDAD}."
     )
 
-    st.write("Las casillas **editables** son todas las de las dos tablas de abajo (doble click para editar las casillas). "
+    st.write("Las casillas **editables** son todas las de las dos tablas de abajo. "
              "Cada **fila** es la ecuación de una unidad.")
     dfA = pd.DataFrame(s.A_base, index=FILAS, columns=COLS)
     dfb = pd.DataFrame({"b · Beneficio": s.b_base}, index=FILAS)
@@ -259,9 +273,9 @@ def entrada():
     cols = st.columns(4)
 
     for i, col in enumerate(cols):
+        s.setdefault(f"x0w_{i}", float(s.x0[i]))
         s.x0[i] = col.number_input(
             f"{SIMBOLOS[i]} · {CORTOS[i]}",
-            value=float(s.x0[i]),
             key=f"x0w_{i}",
             format="%.4f",
             help="Valor inicial de esta variable. Normalmente se utiliza 0."
@@ -271,37 +285,47 @@ def entrada():
 
     p1, p2, p3, p4 = st.columns(4)
 
+    s.setdefault("tol_w", s.tol)
     s.tol = p1.select_slider(
         "Tolerancia",
         options=[1e-4, 1e-6, 1e-8, 1e-10],
-        value=s.tol,
+        key="tol_w",
         format_func=lambda v: f"{v:.0e}",
         help="Precisión exigida para detener el algoritmo."
     )
 
+    s.setdefault("maxit_w", int(s.max_iter))
     s.max_iter = p2.number_input(
         "Iteraciones máximas",
-        1,
-        10000,
-        int(s.max_iter)
+        min_value=1,
+        max_value=10000,
+        key="maxit_w"
     )
 
+    s.setdefault("precond_w", s.precond)
     s.precond = p3.selectbox(
         "Precondicionador",
         PRECONDICIONADORES,
-        index=PRECONDICIONADORES.index(s.precond),
+        key="precond_w",
         help="Permite mejorar las propiedades del sistema."
     )
 
     if s.precond == "SSOR":
+        s.setdefault("omega_w", float(s.omega))
         s.omega = p4.slider(
             "ω (SSOR)",
             0.1,
             1.9,
-            float(s.omega),
-            0.1,
+            step=0.1,
+            key="omega_w",
             help="Parámetro de relajación del precondicionador."
         )
+
+    st.button("Restablecer configuración predeterminada", key="reset_config",
+              on_click=_restablecer_configuracion,
+              help="Vuelve x₀ = 0, tolerancia 10⁻⁶, 1000 iteraciones máximas y precondicionador Jacobi. "
+                   "No modifica las tablas de A y b.")
+    st.caption("Valores predeterminados: x₀ = 0 · tolerancia 10⁻⁶ · 1000 iteraciones máximas · precondicionador Jacobi.")
 
     st.subheader("Resultado con tus datos")
     res = run_current()
