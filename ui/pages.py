@@ -258,8 +258,6 @@ def entrada():
             0.1,
             help="Parámetro de relajación del precondicionador."
         )
-<
-
 
     st.subheader("Resultado con tus datos")
     res = run_current()
