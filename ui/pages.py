@@ -127,7 +127,6 @@ def formulacion():
 
 
 # 4 ─────────────────────────────────────────────────────────────
-CORTOS = ["Desarrollo", "Infraestructura", "Ciberseguridad", "Soporte"]
 COLS = [f"{SIMBOLOS[i]}" for i in range(4)]
 FILAS = [f"Ec. {i + 1} · {NOMBRES[i]}" for i in range(4)]
 
@@ -217,14 +216,14 @@ def entrada():
     st.subheader("Datos del sistema Ax = b")
     
     st.caption(
-        f"Las variables  **x₁·Desarrollo, x₂·Infraestructura, x₃·Ciberseguridad y x₄·Soporte**  representan los presupuestos "
+        f"Las variables_ **x₁·Desarrollo, x₂·Infraestructura, x₃·Ciberseguridad y x₄·Soporte** _representan los presupuestos "
         f"asignados a cada unidad, expresados en {UNIDAD}."
     )
 
     st.write("Las casillas **editables** son todas las de las dos tablas de abajo (doble click para editar las casillas). "
              "Cada **fila** es la ecuación de una unidad.")
     dfA = pd.DataFrame(s.A_base, index=FILAS, columns=COLS)
-    dfb = pd.DataFrame({"b · Beneficio": s.b_base}, index=FILAS)
+    dfb = pd.DataFrame({"b": s.b_base}, index=FILAS)
     cfgA = {COLS[i]: st.column_config.NumberColumn(
         COLS[i], format="%g", step=0.1,
         help=f"Coeficientes de {NOMBRES[i]} en cada ecuación. En la diagonal es su costo propio; "
