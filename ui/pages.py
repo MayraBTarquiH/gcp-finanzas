@@ -207,7 +207,7 @@ def entrada():
         f"asignados a cada unidad, expresados en {UNIDAD}."
     )
 
-    st.write("Las casillas **editables** son todas las de las dos tablas de abajo. "
+    st.write("Las casillas **editables** son todas las de las dos tablas de abajo (doble click para editar las casillas). "
              "Cada **fila** es la ecuación de una unidad.")
     dfA = pd.DataFrame(s.A_base, index=FILAS, columns=COLS)
     dfb = pd.DataFrame({"b · Beneficio": s.b_base}, index=FILAS)
