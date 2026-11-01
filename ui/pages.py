@@ -203,53 +203,53 @@ def entrada():
         s.scenario if s.scenario in SCENARIOS else "Ideal"))
 
 
-with st.expander("⚙️ Configuración avanzada del método"):
-
-    st.caption(
-        "Ajusta los parámetros del algoritmo. "
-        "Puedes conservar los valores predeterminados."
-    )
-
-    st.markdown("**Punto inicial (x₀)**")
-
-    cols = st.columns(4)
-    for i, col in enumerate(cols):
-        s.x0[i] = col.number_input(
-            f"{SIMBOLOS[i]} · {CORTOS[i]}",
-            value=float(s.x0[i]),
-            key=f"x0w_{i}",
-            format="%.4f",
-            help="Valor inicial de esta variable. Normalmente se utiliza 0."
+    with st.expander("⚙️ Configuración avanzada del método"):
+    
+        st.caption(
+            "Ajusta los parámetros del algoritmo. "
+            "Puedes conservar los valores predeterminados."
         )
-
-    p1, p2, p3, p4 = st.columns(4)
-
-    s.tol = p1.select_slider(
-        "Tolerancia",
-        options=[1e-4, 1e-6, 1e-8, 1e-10],
-        value=s.tol,
-        format_func=lambda v: f"{v:.0e}",
-        help="Precisión exigida para detener el algoritmo."
-    )
-
-    s.max_iter = p2.number_input(
-        "Iteraciones máximas",
-        1, 10000, int(s.max_iter)
-    )
-
-    s.precond = p3.selectbox(
-        "Precondicionador",
-        PRECONDICIONADORES,
-        index=PRECONDICIONADORES.index(s.precond),
-        help="Permite mejorar las propiedades del sistema."
-    )
-
-    if s.precond == "SSOR":
-        s.omega = p4.slider(
-            "ω (SSOR)",
-            0.1, 1.9, float(s.omega), 0.1,
-            help="Parámetro de relajación del precondicionador."
+    
+        st.markdown("**Punto inicial (x₀)**")
+    
+        cols = st.columns(4)
+        for i, col in enumerate(cols):
+            s.x0[i] = col.number_input(
+                f"{SIMBOLOS[i]} · {CORTOS[i]}",
+                value=float(s.x0[i]),
+                key=f"x0w_{i}",
+                format="%.4f",
+                help="Valor inicial de esta variable. Normalmente se utiliza 0."
+            )
+    
+        p1, p2, p3, p4 = st.columns(4)
+    
+        s.tol = p1.select_slider(
+            "Tolerancia",
+            options=[1e-4, 1e-6, 1e-8, 1e-10],
+            value=s.tol,
+            format_func=lambda v: f"{v:.0e}",
+            help="Precisión exigida para detener el algoritmo."
         )
+    
+        s.max_iter = p2.number_input(
+            "Iteraciones máximas",
+            1, 10000, int(s.max_iter)
+        )
+    
+        s.precond = p3.selectbox(
+            "Precondicionador",
+            PRECONDICIONADORES,
+            index=PRECONDICIONADORES.index(s.precond),
+            help="Permite mejorar las propiedades del sistema."
+        )
+    
+        if s.precond == "SSOR":
+            s.omega = p4.slider(
+                "ω (SSOR)",
+                0.1, 1.9, float(s.omega), 0.1,
+                help="Parámetro de relajación del precondicionador."
+            )
 
 
     st.subheader("Resultado con tus datos")
