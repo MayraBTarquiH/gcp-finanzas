@@ -127,7 +127,7 @@ def formulacion():
 # 4 ─────────────────────────────────────────────────────────────
 CORTOS = ["Desarrollo", "Infraestructura", "Ciberseguridad", "Soporte"]
 COLS = [f"{SIMBOLOS[i]} · {CORTOS[i]}" for i in range(4)]
-FILAS = [f"Ecuación {i + 1} · {NOMBRES[i]}" for i in range(4)]
+FILAS = [f"Ec. {i + 1} · {NOMBRES[i]}" for i in range(4)]
 
 
 def _hacer_simetrica():
@@ -146,8 +146,8 @@ def entrada():
     st.caption("Modifica los valores de las tablas para actualizar los resultados.")
     
     st.info(
-        "1. Selecciona un escenario en el módulo 5.\n\n"
-        "2. Edita las casillas de las tablas.\n\n"
+        "1. Selecciona un escenario en el módulo 5. (Tres escenarios)\n\n"
+        "2. Edita las casillas de las tablas. (doble click para editar las casillas)\n\n"
         "3. Los resultados se actualizarán automáticamente."
     )
     
