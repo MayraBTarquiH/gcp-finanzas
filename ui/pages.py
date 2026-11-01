@@ -128,7 +128,7 @@ def formulacion():
 
 # 4 ─────────────────────────────────────────────────────────────
 CORTOS = ["Desarrollo", "Infraestructura", "Ciberseguridad", "Soporte"]
-COLS = [f"{SIMBOLOS[i]} · {CORTOS[i]}" for i in range(4)]
+COLS = [f"{SIMBOLOS[i]}" for i in range(4)]
 FILAS = [f"Ec. {i + 1} · {NOMBRES[i]}" for i in range(4)]
 
 
@@ -217,7 +217,7 @@ def entrada():
     st.subheader("Datos del sistema Ax = b")
     
     st.caption(
-        f"Las variables x₁, x₂, x₃ y x₄ representan los presupuestos "
+        f"Las variables x₁·Desarrollo, x₂·Infraestructura, x₃·Ciberseguridad y x₄·Soporte representan los presupuestos "
         f"asignados a cada unidad, expresados en {UNIDAD}."
     )
 
