@@ -127,6 +127,7 @@ def formulacion():
 
 
 # 4 ─────────────────────────────────────────────────────────────
+CORTOS = ["Desarrollo", "Infraestructura", "Ciberseguridad", "Soporte"]
 COLS = [f"{SIMBOLOS[i]}" for i in range(4)]
 FILAS = [f"Ec. {i + 1} · {NOMBRES[i]}" for i in range(4)]
 
