@@ -142,22 +142,27 @@ def entrada():
     st.title("Entrada de datos")
     s = st.session_state
 
-    st.subheader("Cómo usar esta pantalla")
-    nota("<b>1. Elige el escenario</b> en el módulo «5. Tres escenarios» (o deja los datos que ya están).<br>"
-         "<b>2. Cambia los números que quieras</b> en las tablas de color: haz <b>doble clic en una casilla</b>, "
-         "escribe el valor nuevo y presiona <b>Enter</b>.<br>"
-         "<b>3. Mira los resultados:</b> todos los demás módulos se recalculan solos con tus datos. "
-         "Si los datos no son válidos, aquí mismo aparece un aviso en rojo explicando el problema.")
+    
+    st.caption("Modifica los valores de las tablas para actualizar los resultados.")
+    
+    st.info(
+        "1. Selecciona un escenario en el módulo 5.\n\n"
+        "2. Edita las casillas de las tablas.\n\n"
+        "3. Los resultados se actualizarán automáticamente."
+    )
+    
+    st.caption(
+        f"Escenario activo: **{s.scenario}**. "
+        "Al modificar los datos, el escenario pasará a ser Personalizado."
+    )
+    
+    st.subheader("Datos del sistema Ax = b")
+    
+    st.caption(
+        f"Las variables x₁, x₂, x₃ y x₄ representan los presupuestos "
+        f"asignados a cada unidad, expresados en {UNIDAD}."
+    )
 
-    st.subheader("¿Qué son x₁, x₂, x₃ y x₄?")
-    st.write(f"Son **los montos de presupuesto que se reparten** entre las cuatro unidades, medidos en "
-             f"**{UNIDAD}** (por ejemplo, x = 4,6 equivale a Bs 46.000).")
-    tabla(pd.DataFrame({
-        "Variable": SIMBOLOS, "Unidad de la empresa": NOMBRES,
-        "Qué representa": [v["significado"] for v in VARIABLES]}))
-
-    st.caption(f"Datos cargados ahora: **{s.scenario}**. Para cambiar de escenario usa el módulo "
-               "«5. Tres escenarios». Si editas cualquier casilla, pasan a llamarse «Personalizado».")
 
     st.subheader("Datos del sistema Ax = b")
     st.write("Las casillas **editables** son todas las de las dos tablas de abajo. "
@@ -185,24 +190,6 @@ def entrada():
         if not (np.array_equal(A_new, s.A_base, equal_nan=True) and np.array_equal(b_new, s.b_base, equal_nan=True)):
             s.scenario = "Personalizado"
 
-    e1, e2 = st.columns(2)
-    with e1:
-        st.markdown("**¿Qué significa cada casilla de A?**")
-        st.markdown(
-            "- **Casilla de la diagonal** (por ejemplo, fila 1 · columna x₁): *costo propio* de esa unidad. "
-            "Mientras más alto, más caro es cada Bs adicional que se le asigna.\n"
-            "- **Casilla fuera de la diagonal** (por ejemplo, fila 1 · columna x₂): *interacción* entre dos "
-            "unidades, porque comparten recursos o necesitan coordinarse.\n"
-            "- **Regla de simetría:** la casilla (fila 1, columna x₂) debe valer lo mismo que la casilla "
-            "(fila 2, columna x₁).")
-    with e2:
-        st.markdown("**Prueba estas ideas**")
-        st.markdown(
-            "- Sube el **b de Ciberseguridad** (por ejemplo de 30 a 45) y mira cómo crece su presupuesto x₃.\n"
-            "- Sube un **número de la diagonal** y esa unidad recibirá menos presupuesto.\n"
-            "- Cambia solo una casilla fuera de la diagonal (sin tocar su simétrica) para ver cómo la página "
-            "**detecta el error** sin dejar de funcionar.")
-
     v = validate_spd(s.A)
     if v["ok"]:
         st.success("Los datos son válidos: A es simétrica y definida positiva. Los métodos se pueden ejecutar.")
@@ -215,27 +202,55 @@ def entrada():
     st.button("Restablecer los datos del escenario cargado", on_click=lambda: load_scenario(
         s.scenario if s.scenario in SCENARIOS else "Ideal"))
 
-    st.subheader("Parámetros de ejecución")
-    st.write("Controlan **cómo** se resuelve el sistema, no los datos del problema.")
-    st.markdown("**Punto de partida de la búsqueda, x₀.** Es la primera aproximación con la que el algoritmo "
-                "empieza a iterar. Lo normal es dejar todo en 0.")
+
+with st.expander("⚙️ Configuración avanzada del método"):
+
+    st.caption(
+        "Ajusta los parámetros del algoritmo. "
+        "Puedes conservar los valores predeterminados."
+    )
+
+    st.markdown("**Punto inicial (x₀)**")
+
     cols = st.columns(4)
     for i, col in enumerate(cols):
-        s.x0[i] = col.number_input(f"{SIMBOLOS[i]} · {CORTOS[i]}", value=float(s.x0[i]), key=f"x0w_{i}",
-                                   format="%.4f", help="Valor inicial de esta variable (normalmente 0).")
+        s.x0[i] = col.number_input(
+            f"{SIMBOLOS[i]} · {CORTOS[i]}",
+            value=float(s.x0[i]),
+            key=f"x0w_{i}",
+            format="%.4f",
+            help="Valor inicial de esta variable. Normalmente se utiliza 0."
+        )
+
     p1, p2, p3, p4 = st.columns(4)
-    s.tol = p1.select_slider("Tolerancia (precisión)", options=[1e-4, 1e-6, 1e-8, 1e-10], value=s.tol,
-                             format_func=lambda v: f"{v:.0e}",
-                             help="El algoritmo se detiene cuando ‖rₖ‖/‖b‖ es menor que este valor. "
-                                  "Más pequeña = más preciso y más iteraciones.")
-    s.max_iter = p2.number_input("Iteraciones máximas", 1, 10000, int(s.max_iter),
-                                 help="Límite de seguridad para que el algoritmo no itere sin parar.")
-    s.precond = p3.selectbox("Precondicionador", PRECONDICIONADORES, index=PRECONDICIONADORES.index(s.precond),
-                             help="Jacobi: divide por la diagonal de A (recomendado cuando las escalas son muy "
-                                  "distintas). SSOR: usa también la parte triangular de A. Ninguno: GC simple.")
+
+    s.tol = p1.select_slider(
+        "Tolerancia",
+        options=[1e-4, 1e-6, 1e-8, 1e-10],
+        value=s.tol,
+        format_func=lambda v: f"{v:.0e}",
+        help="Precisión exigida para detener el algoritmo."
+    )
+
+    s.max_iter = p2.number_input(
+        "Iteraciones máximas",
+        1, 10000, int(s.max_iter)
+    )
+
+    s.precond = p3.selectbox(
+        "Precondicionador",
+        PRECONDICIONADORES,
+        index=PRECONDICIONADORES.index(s.precond),
+        help="Permite mejorar las propiedades del sistema."
+    )
+
     if s.precond == "SSOR":
-        s.omega = p4.slider("ω (SSOR)", 0.1, 1.9, float(s.omega), 0.1,
-                            help="Parámetro de relajación del precondicionador SSOR (ω = 1 es lo habitual).")
+        s.omega = p4.slider(
+            "ω (SSOR)",
+            0.1, 1.9, float(s.omega), 0.1,
+            help="Parámetro de relajación del precondicionador."
+        )
+
 
     st.subheader("Resultado con tus datos")
     res = run_current()
