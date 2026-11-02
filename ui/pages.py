@@ -488,16 +488,13 @@ def escenarios():
             )
 
             nombre_boton = {
-                nombre: (
-                    "Escenario ideal"
-                    if "ideal" in nombre.lower()
-                    else nombre
-                )
-                for nombre in ESCENARIOS
+                "Ideal": "Escenario ideal",
+                "Bajo estrés financiero": "Escenario bajo estrés",
+                "Mal condicionado": "Escenario mal condicionado"
             }
-
+            
             st.button(
-                nombre_boton[nombre],
+                nombre_boton.get(nombre, nombre),
                 key=f"btn_{nombre}",
                 on_click=load_scenario,
                 args=(nombre,),
