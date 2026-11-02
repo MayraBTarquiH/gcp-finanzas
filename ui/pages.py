@@ -554,6 +554,9 @@ def escenarios():
         "Presupuesto óptimo": res["gcp"]["x"]
     }), hide_index=True)
 
+    st.markdown("**Interpretación financiera**")
+    st.info(SCENARIOS[s.scenario]["interpretacion"])
+
     st.divider()
 
     st.subheader("Análisis de los escenarios")
