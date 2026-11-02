@@ -488,13 +488,13 @@ def escenarios():
             )
 
             st.button(
-                "Escenario activo" if activo else "Seleccionar escenario",
-                key=f"btn_{nombre}",
-                on_click=load_scenario,
-                args=(nombre,),
-                disabled=activo,
-                width="stretch"
-            )
+              nombre,
+              key=f"btn_{nombre}",
+              on_click=load_scenario,
+              args=(nombre,),
+              disabled=activo,
+              width="stretch"
+          )
 
     st.divider()
 
