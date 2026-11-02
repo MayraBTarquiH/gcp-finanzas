@@ -464,6 +464,18 @@ def entrada():
 
 
 # 5 ─────────────────────────────────────────────────────────────
+def nombre_visible(nombre):
+    texto = nombre.lower()
+
+    if "ideal" in texto:
+        return "Escenario ideal"
+    elif "estres" in texto or "estrés" in texto:
+        return "Escenario bajo estrés"
+    elif "condicionado" in texto:
+        return "Escenario mal condicionado"
+
+    return nombre
+
 
 def escenarios():
     st.title("Análisis de escenarios")
@@ -478,36 +490,31 @@ def escenarios():
 
     for col, nombre in zip(cols, ESCENARIOS):
         activo = st.session_state.scenario == nombre
+        nombre_mostrar = nombre_visible(nombre)
 
         with col:
             st.markdown(
                 f'<div class="ficha{" activa" if activo else ""}>'
-                f'<h4>{nombre}</h4>'
+                f'<h4>{nombre_mostrar}</h4>'
                 f'<p>{SCENARIOS[nombre]["resumen"]}</p></div>',
                 unsafe_allow_html=True
             )
 
-            nombre_boton = {
-                "Ideal": "Escenario ideal",
-                "Bajo estrés financiero": "Escenario bajo estrés",
-                "Mal condicionado": "Escenario mal condicionado"
-            }
-            
             st.button(
-                nombre_boton.get(nombre, nombre),
+                nombre_mostrar,
                 key=f"btn_{nombre}",
                 on_click=load_scenario,
                 args=(nombre,),
                 disabled=activo,
                 width="stretch"
             )
-          
+
     st.divider()
 
     # Datos del escenario seleccionado
     s = st.session_state
 
-    st.subheader(f"Datos del escenario: {s.scenario}")
+    st.subheader(f"Datos del escenario: {nombre_visible(s.scenario)}")
 
     if s.scenario in SCENARIOS:
         nota(SCENARIOS[s.scenario]["justificacion"])
@@ -550,6 +557,7 @@ def escenarios():
     st.divider()
 
     st.subheader("Análisis de los escenarios")
+
     steps.pasos_escenarios()
 
 
