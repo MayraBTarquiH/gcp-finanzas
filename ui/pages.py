@@ -42,42 +42,74 @@ def inicio():
 
 
 # 2 ─────────────────────────────────────────────────────────────
+
 def caso():
     st.title("Caso de estudio")
-    st.subheader("Enunciado del problema")
-    nota(
-        "Una empresa dispone de un presupuesto anual de tecnología que debe repartir entre cuatro unidades: "
-        "<b>x₁</b> desarrollo de software, <b>x₂</b> infraestructura y nube, <b>x₃</b> ciberseguridad y "
-        "<b>x₄</b> soporte y capacitación (en decenas de miles de Bs). El reparto óptimo es el que minimiza el "
-        "costo total menos el beneficio esperado, lo que conduce a un sistema lineal <b>Ax = b</b> con A "
-        "simétrica y definida positiva de 4 × 4.<br><br>"
-        "<b>Se pide:</b> (a) plantear el sistema en tres escenarios: ideal, bajo estrés financiero y mal "
-        "condicionado; (b) obtener la solución de referencia con el método directo de Cholesky; "
-        "(c) resolverlo con Gradientes Conjugados (GC) y Gradientes Conjugados Precondicionado (GCP) con "
-        "tolerancia 10⁻⁶; (d) calcular los errores, el residuo y los números de condición κ(A) y κ(M⁻¹A); "
-        "(e) comparar los resultados de todos los métodos e interpretarlos financieramente.")
-    st.subheader("Contexto financiero")
+
+    st.subheader("Planteamiento del problema")
+
     st.write(
-        "Una empresa mediana de servicios en Bolivia debe decidir cuánto del presupuesto anual de TI "
-        f"asigna a cada una de cuatro unidades. Las asignaciones se miden en {UNIDAD}. Cada unidad "
-        "tiene un costo creciente (cada Bs adicional rinde menos que el anterior) y comparte recursos "
-        "con las demás, de modo que invertir en una afecta el costo de las otras.")
-    st.subheader("Por qué el modelo lleva a Ax = b")
-    st.latex(r"\min_x \; f(x) = \tfrac{1}{2}\,x^{T}Ax - b^{T}x \;\;\Rightarrow\;\; \nabla f(x) = Ax - b = 0")
+        "Una empresa mediana de servicios en Bolivia dispone de un "
+        "presupuesto anual de tecnología que debe distribuir entre "
+        "cuatro unidades:"
+    )
+
+    tabla(pd.DataFrame({
+        "Variable": ["x₁", "x₂", "x₃", "x₄"],
+        "Unidad": [
+            "Desarrollo de software",
+            "Infraestructura y nube",
+            "Ciberseguridad",
+            "Soporte y capacitación"
+        ],
+        "Descripción": [
+            "Desarrollo y mantenimiento de sistemas.",
+            "Servidores, almacenamiento y servicios en la nube.",
+            "Protección de sistemas y datos.",
+            "Asistencia técnica y formación del personal."
+        ]
+    }))
+
+    st.info(
+        f"El objetivo es determinar la distribución óptima del presupuesto "
+        f"entre las cuatro unidades, considerando sus costos e interacciones. "
+        f"Los valores se expresan en {UNIDAD}."
+    )
+
+    st.subheader("Objetivo del estudio")
+
     st.write(
-        "f es el costo total menos el beneficio esperado. Como A es simétrica y definida positiva, f es "
-        "estrictamente convexa y tiene un único mínimo, que es la solución de Ax = b. Por eso el sistema "
-        "no es arbitrario: es la condición de óptimo de un problema de asignación de recursos.")
-    st.subheader("Procedencia de los datos")
-    nota("Los coeficientes son datos <b>ilustrativos de carácter académico</b>, definidos con criterio "
-         "financiero, no provienen de una empresa real. Los órdenes de magnitud buscan representar costos "
-         "propios similares (escenario ideal) o de escalas muy distintas (escenario mal condicionado).",
-         aviso=True)
-    st.subheader("Justificación de los tres escenarios")
+        "Resolver el problema de asignación de recursos mediante "
+        "métodos numéricos, comparar su precisión y analizar cómo "
+        "influye el precondicionamiento en la velocidad de convergencia."
+    )
+
+    st.subheader("Escenarios de evaluación")
+
+    st.write(
+        "Se utilizan tres escenarios para estudiar el comportamiento "
+        "de los métodos ante diferentes condiciones del sistema."
+    )
+
     tabla(pd.DataFrame({
         "Escenario": ESCENARIOS,
-        "Qué cambia": [SCENARIOS[e]["resumen"] for e in ESCENARIOS],
-        "Justificación": [SCENARIOS[e]["justificacion"] for e in ESCENARIOS]}))
+        "Características": [
+            SCENARIOS[e]["resumen"] for e in ESCENARIOS
+        ],
+        "Justificación": [
+            SCENARIOS[e]["justificacion"] for e in ESCENARIOS
+        ]
+    }))
+
+    st.subheader("Procedencia de los datos")
+
+    nota(
+        "Los coeficientes utilizados son datos ilustrativos de carácter "
+        "académico. No proceden de una empresa real; fueron definidos "
+        "para representar distintas condiciones financieras y numéricas.",
+        aviso=True
+    )
+
 
 
 # 3 ─────────────────────────────────────────────────────────────
