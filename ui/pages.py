@@ -569,8 +569,9 @@ def escenarios():
     st.subheader("Comparación de resultados de los tres escenarios")
 
     st.write(
-        "Se comparan los resultados obtenidos mediante GC y GCP "
-        "manteniendo la misma configuración de los métodos numéricos."
+        "Se comparan los resultados obtenidos mediante los métodos "
+        "de Gradientes Conjugados (GC) y Gradientes Conjugados "
+        "Precondicionados (GCP) en cada uno de los tres escenarios."
     )
 
     resultados_comparacion = []
