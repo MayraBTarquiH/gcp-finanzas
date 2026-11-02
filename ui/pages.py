@@ -487,20 +487,21 @@ def escenarios():
                 unsafe_allow_html=True
             )
 
-           nombre_boton = {
-              "Ideal": "Escenario ideal",
-              "Bajo estrés financiero": "Bajo estrés financiero",
-              "Mal condicionado": "Mal condicionado"
-          }
+            nombre_boton = {
+                "Ideal": "Escenario ideal",
+                "Bajo estrés financiero": "Bajo estrés financiero",
+                "Mal condicionado": "Mal condicionado"
+            }
+            
+            st.button(
+                nombre_boton[nombre],
+                key=f"btn_{nombre}",
+                on_click=load_scenario,
+                args=(nombre,),
+                disabled=activo,
+                width="stretch"
+            )
           
-          st.button(
-              nombre_boton[nombre],
-              key=f"btn_{nombre}",
-              on_click=load_scenario,
-              args=(nombre,),
-              disabled=activo,
-              width="stretch"
-          )
     st.divider()
 
     # Datos del escenario seleccionado
