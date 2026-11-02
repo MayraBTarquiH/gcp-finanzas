@@ -563,6 +563,48 @@ def escenarios():
 
     steps.pasos_escenarios()
 
+    
+    st.divider()
+
+    st.subheader("Comparación de resultados de los tres escenarios")
+
+    st.write(
+        "Se comparan los resultados obtenidos mediante GC y GCP "
+        "manteniendo la misma configuración de los métodos numéricos."
+    )
+
+    resultados_comparacion = []
+
+    for nombre in ESCENARIOS:
+        resultado = run_scenario(nombre)
+
+        if not resultado["valid"]:
+            st.warning(
+                f"No fue posible calcular el escenario: {nombre}"
+            )
+            continue
+
+        resultados_comparacion.append({
+            "Escenario": nombre_visible(nombre),
+            "κ(A)": resultado["kappa_A"],
+            "κ(M⁻¹A)": resultado["kappa_M"],
+            "Iteraciones GC": resultado["gc"]["iterations"],
+            "Iteraciones GCP": resultado["gcp"]["iterations"]
+        })
+
+    if resultados_comparacion:
+        df_comparacion = pd.DataFrame(resultados_comparacion)
+
+        tabla(
+            df_comparacion,
+            hide_index=True,
+            fmt={
+                "κ(A)": "{:.4g}",
+                "κ(M⁻¹A)": "{:.4g}"
+            }
+        )
+
+
 
 # 6 ─────────────────────────────────────────────────────────────
 def referencia():
