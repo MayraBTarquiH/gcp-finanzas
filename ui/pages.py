@@ -488,9 +488,12 @@ def escenarios():
             )
 
             nombre_boton = {
-                "Ideal": "Escenario ideal",
-                "Bajo estrés financiero": "Bajo estrés financiero",
-                "Mal condicionado": "Mal condicionado"
+                nombre: (
+                    "Escenario ideal"
+                    if "ideal" in nombre.lower()
+                    else nombre
+                )
+                for nombre in ESCENARIOS
             }
 
             st.button(
