@@ -69,10 +69,10 @@ def pasos_escenarios():
              rf"\hat a_{{21}} = \dfrac{{{Am[1, 0]:g}}}{{\sqrt{{{d[1]:g}\cdot {d[0]:g}}}}} = {Ah[1, 0]:.4f}")
     c1, c2 = st.columns(2)
     with c1:
-        st.markdown("**Diagonal de A**")
+        st.markdown("\n\n**Diagonal de A**")
         tabla(pd.DataFrame({"Unidad": NOMBRES, "aᵢᵢ": d, "√aᵢᵢ": np.sqrt(d)}))
     with c2:
-        st.markdown("**Matriz reescalada Â**")
+        st.markdown("\n\n**Matriz reescalada Â**")
         tabla(pd.DataFrame(Ah, index=NOMBRES, columns=["x₁", "x₂", "x₃", "x₄"]), hide_index=False,
               fmt={c: "{:.4f}" for c in ["x₁", "x₂", "x₃", "x₄"]})
     st.latex(rf"\kappa(A) = {np.linalg.cond(Am):.2f} \;\longrightarrow\; \kappa(\hat A) = {np.linalg.cond(Ah):.4f}")
