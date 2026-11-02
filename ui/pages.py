@@ -607,31 +607,93 @@ def escenarios():
 
 
 
+
 # 6 ─────────────────────────────────────────────────────────────
 def referencia():
-    st.title("Solución de referencia: Cholesky")
+    st.title("Solución de referencia: método de Cholesky")
+
+    st.write(
+        "Se obtiene una solución de referencia del sistema Ax = b "
+        "mediante la factorización de Cholesky. Esta solución permitirá "
+        "evaluar la precisión de los métodos GC y GCP."
+    )
+
     res = run_current()
+
     if not res["valid"]:
         return show_invalid(res)
+
     s = st.session_state
-    st.write("Se factoriza **A = L Lᵀ** (programado a mano, sin librerías) y se resuelven dos sistemas "
-             "triangulares: **L y = b** por sustitución hacia adelante y **Lᵀ x = y** hacia atrás.")
+
     st.caption(f"Escenario activo: {s.scenario}")
+
+    st.subheader("1. Factorización de Cholesky")
+
+    st.markdown(
+        "La matriz A se descompone en el producto de una matriz "
+        "triangular inferior L y su transpuesta:"
+    )
+
+    st.latex(r"A = LL^T")
+
+    st.markdown(
+        "Después se resuelven dos sistemas triangulares: "
+        r"$Ly=b$ mediante sustitución hacia adelante y "
+        r"$L^Tx=y$ mediante sustitución hacia atrás."
+    )
+
     c1, c2 = st.columns(2)
-    c1.markdown("**Factor L**")
+
     with c1:
-        tabla(pd.DataFrame(res["L"], index=NOMBRES, columns=SIMBOLOS), hide_index=False)
-    c2.markdown("**Vector intermedio y y solución x**")
+        st.markdown("**Matriz triangular inferior L**")
+        tabla(
+            pd.DataFrame(res["L"], index=NOMBRES, columns=SIMBOLOS),
+            hide_index=False
+        )
+
     with c2:
-        tabla(pd.DataFrame({"y": res["y"], f"x ({UNIDAD})": res["x_ref"]}, index=NOMBRES), hide_index=False)
-    err_fact = np.max(np.abs(res["L"] @ res["L"].T - s.A))
-    err_lib = np.max(np.abs(res["x_ref"] - np.linalg.solve(s.A, s.b)))
-    m = st.columns(2)
-    m[0].metric("máx |L Lᵀ − A|", f"{err_fact:.1e}")
-    m[1].metric("máx |x − numpy.linalg.solve|", f"{err_lib:.1e}")
-    nota("Si Cholesky se completa sin errores, A es definida positiva. Esta solución es la "
-         "«solución numérica de referencia» contra la que se miden los errores del GCP.")
+        st.markdown("**Vector intermedio y solución de referencia**")
+        tabla(
+            pd.DataFrame({
+                "Vector y": res["y"],
+                f"Solución x ({UNIDAD})": res["x_ref"]
+            }, index=NOMBRES),
+            hide_index=False
+        )
+
     st.divider()
+
+    st.subheader("2. Verificación de los resultados")
+
+    err_fact = np.max(np.abs(res["L"] @ res["L"].T - s.A))
+
+    err_lib = np.max(
+        np.abs(res["x_ref"] - np.linalg.solve(s.A, s.b))
+    )
+
+    m = st.columns(2)
+
+    m[0].metric(
+        "Error de factorización",
+        f"{err_fact:.2e}"
+    )
+
+    m[1].metric(
+        "Diferencia frente a NumPy",
+        f"{err_lib:.2e}"
+    )
+
+    nota(
+        "Un error de factorización cercano a cero indica que "
+        "L · Lᵀ reproduce correctamente la matriz A. La solución "
+        "obtenida mediante Cholesky se utiliza como referencia "
+        "para comparar la precisión de GC y GCP."
+    )
+
+    st.divider()
+
+    st.subheader("3. Procedimiento matemático")
+
     steps.pasos_cholesky()
 
 
