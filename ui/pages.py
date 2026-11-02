@@ -492,7 +492,7 @@ def escenarios():
                 "Bajo estrés financiero": "Bajo estrés financiero",
                 "Mal condicionado": "Mal condicionado"
             }
-            
+
             st.button(
                 nombre_boton[nombre],
                 key=f"btn_{nombre}",
