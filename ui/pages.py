@@ -692,8 +692,7 @@ def referencia():
 
     st.divider()
 
-    st.subheader("3. Procedimiento matemático")
-
+    st.subheader("Desarrollo del método de Cholesky")
     steps.pasos_cholesky()
 
 
