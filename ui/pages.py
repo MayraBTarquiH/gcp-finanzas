@@ -113,50 +113,135 @@ def caso():
 
 
 # 3 ─────────────────────────────────────────────────────────────
+
 def formulacion():
-    st.title("Formulación")
-    st.subheader("Variables")
+    st.title("Formulación matemática")
+
+    # 1. Variables del modelo
+    st.subheader("1. Variables de decisión")
+
     tabla(pd.DataFrame({
-        "Variable": SIMBOLOS, "Unidad": NOMBRES,
+        "Variable": SIMBOLOS,
+        "Unidad": NOMBRES,
         "Significado financiero": [v["significado"] for v in VARIABLES],
-        "Medida en": UNIDAD}))
-    st.subheader("Sistema lineal del escenario activo")
+        "Medida en": UNIDAD
+    }))
+
+    # 2. Modelo matemático
+    st.subheader("2. Modelo de optimización")
+
+    st.write(
+        "El problema consiste en encontrar la distribución del presupuesto "
+        "que minimice el costo total menos el beneficio esperado."
+    )
+
+    st.latex(
+        r"\min_x \; f(x) = \frac{1}{2}x^TAx - b^Tx"
+    )
+
+    st.markdown("**Condición de optimalidad:**")
+
+    st.latex(
+        r"\nabla f(x) = Ax-b=0"
+    )
+
+    st.info(
+        "Al igualar el gradiente a cero se obtiene el sistema lineal "
+        "Ax = b. Como A es simétrica y definida positiva, existe "
+        "una única solución que minimiza la función."
+    )
+
+    # 3. Sistema lineal
+    st.subheader("3. Sistema lineal del escenario activo")
+
     s = st.session_state
+
     st.caption(f"Escenario activo: {s.scenario}")
-    st.markdown("**Sistema de ecuaciones** (una ecuación por unidad):")
+
+    st.markdown("**Sistema de ecuaciones:**")
+
     st.latex(latex_system(s.A, s.b))
-    st.markdown("**En forma matricial:**")
+
+    st.markdown("**Representación matricial:**")
+
     xvec = r"\begin{bmatrix} x_1 \\ x_2 \\ x_3 \\ x_4 \end{bmatrix}"
-    st.latex(r"A\,x = b \quad\Rightarrow\quad " + latex_matrix(s.A) + xvec + " = " + latex_matrix(s.b))
-    st.subheader("Interpretación de los coeficientes")
+
+    st.latex(
+        r"A\,x = b \quad\Rightarrow\quad "
+        + latex_matrix(s.A)
+        + xvec
+        + " = "
+        + latex_matrix(s.b)
+    )
+
+    # 4. Interpretación
+    st.subheader("4. Interpretación de los coeficientes")
+
     st.markdown(
-        "- **aᵢᵢ (diagonal):** costo propio de la unidad *i* con rendimientos decrecientes. "
-        "Un valor mayor significa que cada Bs adicional en esa unidad es más costoso.\n"
-        "- **aᵢⱼ (fuera de la diagonal):** interacción entre las unidades *i* y *j* (competencia por "
-        "recursos compartidos o costos de coordinación). Es simétrica: la interacción de *i* con *j* es "
-        "la misma que la de *j* con *i*.\n"
-        "- **bᵢ:** beneficio marginal esperado de invertir en la unidad *i*.")
-    st.subheader("Demostración: A es simétrica y definida positiva")
-    st.write("Se verifica con tres criterios: **A = Aᵀ**, **menores principales positivos** (criterio de "
-             "Sylvester) y **autovalores positivos**. Además, Cholesky se completa solo si A es definida positiva.")
+        "- **aᵢᵢ (diagonal):** representa el costo propio de cada unidad.\n"
+        "- **aᵢⱼ (fuera de la diagonal):** representa la interacción "
+        "entre dos unidades por recursos compartidos o coordinación.\n"
+        "- **bᵢ:** representa el beneficio marginal esperado de invertir "
+        "en cada unidad."
+    )
+
+    # 5. Validación matemática
+    st.subheader("5. Verificación de la matriz")
+
+    st.write(
+        "Para aplicar los métodos de Gradientes Conjugados y Cholesky, "
+        "se verifica que A sea simétrica y definida positiva."
+    )
+
+    st.caption(
+        "La comprobación utiliza la simetría, los menores principales "
+        "(criterio de Sylvester) y los autovalores."
+    )
+
     tabs = st.tabs(ESCENARIOS)
+
     for tab, nombre in zip(tabs, ESCENARIOS):
         with tab:
             A, b = cargar(nombre)
             v = validate_spd(A)
+
             c1, c2, c3 = st.columns(3)
-            c1.metric("A = Aᵀ", "Sí" if v["symmetric"] else "No")
-            c2.metric("Menor autovalor", f"{v['eigenvalues'].min():.4g}")
-            c3.metric("Definida positiva", "Sí" if v["positive_definite"] else "No")
+
+            c1.metric(
+                "A = Aᵀ",
+                "Sí" if v["symmetric"] else "No"
+            )
+
+            c2.metric(
+                "Menor autovalor",
+                f"{v['eigenvalues'].min():.4g}"
+            )
+
+            c3.metric(
+                "Definida positiva",
+                "Sí" if v["positive_definite"] else "No"
+            )
+
             tabla(pd.DataFrame({
-                "Menor principal": [f"Δ{k}" for k in range(1, 5)], "Valor": v["minors"],
-                "Autovalor": v["eigenvalues"]}), fmt={"Valor": "{:.4f}", "Autovalor": "{:.4f}"})
+                "Menor principal": [f"Δ{k}" for k in range(1, 5)],
+                "Valor": v["minors"],
+                "Autovalor": v["eigenvalues"]
+            }), fmt={
+                "Valor": "{:.4f}",
+                "Autovalor": "{:.4f}"
+            })
+
             st.markdown("**Sistema de ecuaciones**")
             st.latex(latex_system(A, b))
-            st.markdown("**Matriz A y vector b**")
-            st.latex("A = " + latex_matrix(A) + r", \qquad b = " + latex_matrix(b))
-            steps.pasos_spd(A, v)
 
+            st.markdown("**Matriz A y vector b**")
+            st.latex(
+                "A = " + latex_matrix(A)
+                + r", \qquad b = " + latex_matrix(b)
+            )
+
+            steps.pasos_spd(A, v)
+          
 
 # 4 ─────────────────────────────────────────────────────────────
 CORTOS = ["Desarrollo", "Infraestructura", "Ciberseguridad", "Soporte"]
