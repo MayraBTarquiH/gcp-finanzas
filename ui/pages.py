@@ -464,37 +464,86 @@ def entrada():
 
 
 # 5 ─────────────────────────────────────────────────────────────
+
 def escenarios():
-    st.title("Tres escenarios")
-    st.write("Los tres comparten las mismas cuatro variables y la estructura del modelo. Cambia A, b o ambos.")
+    st.title("Análisis de escenarios")
+
+    st.write(
+        "Evalúa el comportamiento de los métodos numéricos "
+        "en tres condiciones diferentes del sistema."
+    )
+
+    # Selección de escenarios
     cols = st.columns(3)
+
     for col, nombre in zip(cols, ESCENARIOS):
         activo = st.session_state.scenario == nombre
+
         with col:
-            st.markdown(f'<div class="ficha{" activa" if activo else ""}"><h4>{nombre}</h4>'
-                        f'<p>{SCENARIOS[nombre]["resumen"]}</p></div>', unsafe_allow_html=True)
-            st.button("Cargar y ejecutar" if not activo else "Escenario activo", key=f"btn_{nombre}",
-                      on_click=load_scenario, args=(nombre,), disabled=activo, width="stretch")
+            st.markdown(
+                f'<div class="ficha{" activa" if activo else ""}>'
+                f'<h4>{nombre}</h4>'
+                f'<p>{SCENARIOS[nombre]["resumen"]}</p></div>',
+                unsafe_allow_html=True
+            )
+
+            st.button(
+                "Escenario activo" if activo else "Seleccionar escenario",
+                key=f"btn_{nombre}",
+                on_click=load_scenario,
+                args=(nombre,),
+                disabled=activo,
+                width="stretch"
+            )
+
     st.divider()
+
+    # Datos del escenario seleccionado
     s = st.session_state
-    st.subheader(f"Escenario activo: {s.scenario}")
+
+    st.subheader(f"Datos del escenario: {s.scenario}")
+
     if s.scenario in SCENARIOS:
         nota(SCENARIOS[s.scenario]["justificacion"])
+
     c1, c2 = st.columns([2.2, 1])
+
     with c1:
+        st.markdown("**Matriz A**")
         tabla(df_matrix(s.A), hide_index=False)
+
     with c2:
-        tabla(pd.DataFrame({"b": s.b}, index=NOMBRES), hide_index=False)
+        st.markdown("**Vector b**")
+        tabla(
+            pd.DataFrame({"Beneficio": s.b}, index=NOMBRES),
+            hide_index=False
+        )
+
+    # Resultados del escenario
     res = run_current()
+
     if not res["valid"]:
         return show_invalid(res)
+
+    st.subheader("Resultados del escenario")
+
     m = st.columns(4)
-    m[0].metric("κ(A)", f"{res['kappa_A']:.4g}")
-    m[1].metric("κ(M⁻¹A)", f"{res['kappa_M']:.4g}")
+
+    m[0].metric("Condición de A · κ(A)", f"{res['kappa_A']:.4g}")
+    m[1].metric("Condición de M⁻¹A", f"{res['kappa_M']:.4g}")
     m[2].metric("Iteraciones GC", res["gc"]["iterations"])
     m[3].metric("Iteraciones GCP", res["gcp"]["iterations"])
-    st.write("**Solución (GCP):** " + ", ".join(f"{n}: {x:.4f}" for n, x in zip(NOMBRES, res["gcp"]["x"])))
+
+    st.markdown("**Solución calculada mediante GCP**")
+
+    tabla(pd.DataFrame({
+        "Unidad": NOMBRES,
+        "Presupuesto óptimo": res["gcp"]["x"]
+    }), hide_index=True)
+
     st.divider()
+
+    st.subheader("Análisis de los escenarios")
     steps.pasos_escenarios()
 
 
