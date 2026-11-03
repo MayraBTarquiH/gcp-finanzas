@@ -696,44 +696,170 @@ def referencia():
     steps.pasos_cholesky()
 
 
+
 # 7 ─────────────────────────────────────────────────────────────
 def gcp_vs_gc():
-    st.title("GCP vs GC")
+    st.title("Comparación: GCP vs GC")
+
+    st.write(
+        "En esta sección se comparan los métodos de Gradientes "
+        "Conjugados (GC) y Gradientes Conjugados Precondicionados (GCP) "
+        "para analizar su precisión y velocidad de convergencia."
+    )
+
     res = run_current()
+
     if not res["valid"]:
         return show_invalid(res)
+
     s = st.session_state
-    st.caption(f"Escenario activo: {s.scenario} · Precondicionador: {res['precond'].name} · "
-               f"Tolerancia: {s.tol:.0e}")
-    st.write("El **GC** es el método sin precondicionar y solo sirve de contraste. El **GCP** resuelve "
-             "**M zₖ = rₖ** en cada iteración (Algoritmo 2 de Suñagua, 2020).")
     gc, gcp = res["gc"], res["gcp"]
-    tabla(pd.DataFrame({
-        "Método": ["Solución de referencia (Cholesky)", "GC (sin precondicionar)", f"GCP ({res['precond'].name})"],
-        "Vector solución": [fmt_vec(res["x_ref"]), fmt_vec(gc["x"]), fmt_vec(gcp["x"])],
-        "Iteraciones": ["—", str(gc["iterations"]), str(gcp["iterations"])],
-        "Residuo relativo final": ["—", f"{res['resid_gc']:.2e}", f"{res['resid_gcp']:.2e}"],
-        "¿Convergió?": ["—", "Sí" if gc["converged"] else "No", "Sí" if gcp["converged"] else "No"],
-    }))
-    m = st.columns(2)
-    m[0].metric("κ(A)", f"{res['kappa_A']:.4g}")
-    m[1].metric("κ(M⁻¹A)", f"{res['kappa_M']:.4g}",
-                delta=f"{res['kappa_M'] / res['kappa_A'] - 1:+.1%} respecto a κ(A)", delta_color="inverse")
-    tol_line = pd.DataFrame({"y": [s.tol]})
-    hist = pd.concat([
-        pd.DataFrame({"Iteración": range(len(gc["history"])), "Residuo relativo": np.maximum(gc["history"], 1e-18), "Método": "GC"}),
-        pd.DataFrame({"Iteración": range(len(gcp["history"])), "Residuo relativo": np.maximum(gcp["history"], 1e-18), "Método": "GCP"})])
-    base = alt.Chart(hist).mark_line(point=True).encode(
-        x=alt.X("Iteración:Q", axis=alt.Axis(tickMinStep=1)),
-        y=alt.Y("Residuo relativo:Q", scale=alt.Scale(type="log")),
-        color=alt.Color("Método:N", scale=alt.Scale(range=["#C98A1B", "#0F8B8D"])))
-    rule = alt.Chart(tol_line).mark_rule(strokeDash=[5, 4], color="#B3261E").encode(y="y:Q")
-    st.altair_chart(base + rule, width="stretch")
-    st.caption("Línea roja: tolerancia. Eje vertical en escala logarítmica.")
-    nota("En un sistema de solo n = 4 variables, el GC termina en a lo sumo 4 iteraciones por teoría, "
-         "por eso la diferencia en iteraciones puede ser pequeña. La ganancia del precondicionador se ve "
-         "con claridad en el número de condición κ(M⁻¹A).")
+
+    st.caption(
+        f"Escenario activo: {s.scenario} · "
+        f"Precondicionador: {res['precond'].name} · "
+        f"Tolerancia: {s.tol:.0e}"
+    )
+
+    # 1. Descripción de los métodos
+    st.subheader("1. ¿Cómo trabajan los métodos?")
+
+    st.markdown(
+        "- **GC:** resuelve el sistema lineal sin utilizar un precondicionador.\n"
+        "- **GCP:** utiliza un precondicionador para mejorar las propiedades "
+        "del sistema y favorecer la convergencia."
+    )
+
+    st.latex(r"Mz_k = r_k")
+
+    st.caption(
+        "En GCP, el sistema anterior se resuelve en cada iteración para "
+        "obtener el vector auxiliar zₖ."
+    )
+
+    # 2. Comparación de resultados
     st.divider()
+    st.subheader("2. Comparación de resultados")
+
+    tabla(pd.DataFrame({
+        "Método": [
+            "Referencia (Cholesky)",
+            "Gradientes Conjugados (GC)",
+            f"Gradientes Conjugados Precondicionados (GCP)"
+        ],
+        "Vector solución": [
+            fmt_vec(res["x_ref"]),
+            fmt_vec(gc["x"]),
+            fmt_vec(gcp["x"])
+        ],
+        "Iteraciones": [
+            "—",
+            str(gc["iterations"]),
+            str(gcp["iterations"])
+        ],
+        "Residuo relativo": [
+            "—",
+            f"{res['resid_gc']:.2e}",
+            f"{res['resid_gcp']:.2e}"
+        ],
+        "Convergencia": [
+            "Referencia",
+            "Sí" if gc["converged"] else "No",
+            "Sí" if gcp["converged"] else "No"
+        ]
+    }))
+
+    # 3. Números de condición
+    st.divider()
+    st.subheader("3. Comparación de los números de condición")
+
+    m = st.columns(2)
+
+    m[0].metric(
+        "Condición de A · κ(A)",
+        f"{res['kappa_A']:.4g}"
+    )
+
+    m[1].metric(
+        "Condición de M⁻¹A · κ(M⁻¹A)",
+        f"{res['kappa_M']:.4g}",
+        delta=f"{res['kappa_M'] / res['kappa_A'] - 1:+.1%} respecto a κ(A)",
+        delta_color="inverse"
+    )
+
+    st.write(
+        "Un número de condición menor indica que el sistema está "
+        "mejor condicionado y, en general, es menos sensible a "
+        "pequeñas perturbaciones."
+    )
+
+    # 4. Gráfica de convergencia
+    st.divider()
+    st.subheader("4. Comportamiento de convergencia")
+
+    tol_line = pd.DataFrame({"y": [s.tol]})
+
+    hist = pd.concat([
+        pd.DataFrame({
+            "Iteración": range(len(gc["history"])),
+            "Residuo relativo": np.maximum(gc["history"], 1e-18),
+            "Método": "GC"
+        }),
+        pd.DataFrame({
+            "Iteración": range(len(gcp["history"])),
+            "Residuo relativo": np.maximum(gcp["history"], 1e-18),
+            "Método": "GCP"
+        })
+    ])
+
+    base = alt.Chart(hist).mark_line(point=True).encode(
+        x=alt.X(
+            "Iteración:Q",
+            axis=alt.Axis(tickMinStep=1),
+            title="Número de iteraciones"
+        ),
+        y=alt.Y(
+            "Residuo relativo:Q",
+            scale=alt.Scale(type="log"),
+            title="Residuo relativo (escala logarítmica)"
+        ),
+        color=alt.Color(
+            "Método:N",
+            scale=alt.Scale(range=["#C98A1B", "#0F8B8D"])
+        ),
+        tooltip=["Método", "Iteración", "Residuo relativo"]
+    )
+
+    rule = alt.Chart(tol_line).mark_rule(
+        strokeDash=[5, 4],
+        color="#B3261E"
+    ).encode(y="y:Q")
+
+    st.altair_chart(base + rule, width="stretch")
+
+    st.caption(
+        "La línea roja representa la tolerancia establecida. "
+        "El eje vertical utiliza una escala logarítmica para facilitar "
+        "la observación de la disminución del residuo."
+    )
+
+    # 5. Interpretación
+    st.divider()
+    st.subheader("5. Interpretación de los resultados")
+
+    nota(
+        "En un sistema de n = 4 variables, el método de Gradientes "
+        "Conjugados puede alcanzar la solución en un máximo de 4 "
+        "iteraciones en aritmética exacta. En la práctica, los errores "
+        "de redondeo y la tolerancia pueden influir en las iteraciones "
+        "observadas. El precondicionador busca mejorar el condicionamiento "
+        "del sistema y favorecer la convergencia."
+    )
+
+    # 6. Procedimiento matemático
+    st.divider()
+    st.subheader("Desarrollo del método GCP")
+
     steps.pasos_gcp()
 
 
