@@ -1171,43 +1171,122 @@ def qa_page():
         "y que los métodos numéricos funcionen según lo esperado."
     )
 
-    st.caption(
-        "Las pruebas 1 a 4 corresponden a los requisitos obligatorios "
-        "del desafío. La prueba 5 verifica la implementación propia "
-        "del método de Cholesky."
-    )
 
 
 # 10 ────────────────────────────────────────────────────────────
 def conclusiones():
     st.title("Conclusiones y referencias")
-    r = {n: run_scenario(n) for n in ESCENARIOS}
-    mal = r["Mal condicionado"]
-    if all(x["valid"] for x in r.values()):
-        st.subheader("Interpretación técnica")
+
+    st.write(
+        "En este módulo se presentan las conclusiones obtenidas a partir "
+        "de la aplicación de los métodos de Gradientes Conjugados (GC) "
+        "y Gradientes Conjugados Precondicionados (GCP) al problema "
+        "de distribución del presupuesto de TI."
+    )
+
+    # Cálculo de resultados para los tres escenarios
+    resultados = {
+        nombre: run_scenario(nombre)
+        for nombre in ESCENARIOS
+    }
+
+    todos_validos = all(
+        resultado["valid"]
+        for resultado in resultados.values()
+    )
+
+    st.divider()
+
+    # 1. Conclusiones técnicas
+    st.subheader("1. Conclusiones técnicas")
+
+    if todos_validos:
+        mal = resultados["Mal condicionado"]
+
+        error_maximo = max(
+            resultado["errors"]["Error absoluto"].max()
+            for resultado in resultados.values()
+        )
+
         st.markdown(
-            f"- En los tres escenarios el GCP convergió y coincidió con la solución de referencia de "
-            f"Cholesky (error absoluto máximo del orden de "
-            f"{max(x['errors']['Error absoluto'].max() for x in r.values()):.0e}).\n"
-            f"- En el escenario mal condicionado, el precondicionador redujo el número de condición de "
-            f"κ(A) = {mal['kappa_A']:.1f} a κ(M⁻¹A) = {mal['kappa_M']:.2f}. Eso confirma lo que dice "
-            f"Suñagua (2020): la velocidad de convergencia depende de κ y el precondicionador la mejora.\n"
-            f"- Iteraciones en ese escenario: GC = {mal['gc']['iterations']}, GCP = {mal['gcp']['iterations']}. "
-            f"Con n = 4, el GC termina en a lo sumo 4 iteraciones, así que la ventaja en iteraciones "
-            f"crece con la dimensión del sistema y con κ.\n"
-            f"- El escenario de estrés no altera κ(A), porque solo cambia b: desplaza el equilibrio, no la "
-            f"dificultad numérica.")
-    st.subheader("Interpretación financiera")
+            f"- **Precisión de los métodos:** en los tres escenarios, "
+            f"el GCP logró converger y obtuvo soluciones muy próximas "
+            f"a las calculadas mediante Cholesky. El error absoluto "
+            f"máximo fue de aproximadamente {error_maximo:.0e}.\n\n"
+            f"- **Efecto del precondicionador:** en el escenario mal "
+            f"condicionado, el número de condición disminuyó de "
+            f"κ(A) = {mal['kappa_A']:.1f} a "
+            f"κ(M⁻¹A) = {mal['kappa_M']:.3f}. Esto demuestra que "
+            f"el precondicionador de Jacobi mejora considerablemente "
+            f"el condicionamiento del sistema.\n\n"
+            f"- **Número de iteraciones:** tanto GC como GCP necesitaron "
+            f"{mal['gc']['iterations']} iteraciones en el escenario mal "
+            f"condicionado. En este problema de cuatro variables, "
+            f"la mejora del precondicionador se observa principalmente "
+            f"en el número de condición y no en una reducción de "
+            f"iteraciones.\n\n"
+            f"- **Escenario bajo estrés:** el número de condición "
+            f"permanece igual al del escenario ideal porque la matriz A "
+            f"no cambia; únicamente se modifica el vector b."
+        )
+    else:
+        st.warning(
+            "No fue posible generar todas las conclusiones técnicas "
+            "porque uno o más escenarios presentan resultados no válidos. "
+            "Revisa los datos y vuelve a ejecutar los cálculos."
+        )
+
+    st.divider()
+
+    # 2. Conclusiones financieras
+    st.subheader("2. Conclusiones financieras")
+
     st.markdown(
-        "- Con costos equilibrados (Ideal), el presupuesto se reparte de forma pareja.\n"
-        "- Bajo estrés, ciberseguridad y desarrollo exigen mucho más presupuesto, que es lo esperable "
-        "con inflación salarial y más incidentes.\n"
-        "- Con escalas de costo muy distintas (Mal condicionado), el sistema es sensible a pequeños cambios "
-        "en los datos: conviene reescalar o precondicionar antes de confiar en la asignación.")
-    st.subheader("Referencias")
+        "- **Escenario ideal:** representa una situación estable, "
+        "en la que los costos e interacciones entre las unidades de TI "
+        "se mantienen equilibrados.\n\n"
+        "- **Escenario bajo estrés:** el incremento de los valores de "
+        "b representa mayores necesidades de presupuesto, especialmente "
+        "en desarrollo y ciberseguridad. Esto modifica la asignación "
+        "óptima sin alterar el condicionamiento de la matriz.\n\n"
+        "- **Escenario mal condicionado:** las diferencias de escala "
+        "entre las unidades generan un sistema numéricamente sensible. "
+        "Por ello, aplicar un precondicionador permite mejorar el "
+        "tratamiento numérico antes de calcular la asignación."
+    )
+
+    st.divider()
+
+    # 3. Conclusión general
+    st.subheader("3. Conclusión general")
+
+    st.write(
+        "El desarrollo de este trabajo permitió aplicar los métodos "
+        "de Gradientes Conjugados y Gradientes Conjugados Precondicionados "
+        "a un problema de distribución de presupuesto tecnológico. "
+        "Los resultados demostraron que ambos métodos pueden obtener "
+        "soluciones precisas para los escenarios planteados. Además, "
+        "se comprobó que el precondicionamiento de Jacobi resulta "
+        "especialmente útil cuando el sistema presenta un mal "
+        "condicionamiento, ya que reduce considerablemente su número "
+        "de condición. Por tanto, el uso de métodos numéricos y técnicas "
+        "de precondicionamiento contribuye a resolver sistemas lineales "
+        "y analizar problemas de asignación de recursos."
+    )
+
+    st.divider()
+
+    # 4. Referencias bibliográficas
+    st.subheader("4. Referencias bibliográficas")
+
     st.markdown(
-        "- Suñagua S., P. (2020). Método de Gradientes Conjugados Precondicionado. *Revista Boliviana de "
-        "Matemática – UMSA*, 04, 2–7.\n"
-        "- Golub, G. H., & Van Loan, C. F. (2013). *Matrix Computations* (4th ed.). Johns Hopkins University Press.\n"
-        "- Saad, Y. (2003). *Iterative Methods for Sparse Linear Systems* (2nd ed.). SIAM.\n"
-        "- Datos: coeficientes ilustrativos definidos para este trabajo académico (ver «Caso de estudio»).")
+        "- Suñagua S., P. (2020). *Método de Gradientes Conjugados "
+        "Precondicionado*. Revista Boliviana de Matemática – UMSA, "
+        "04, 2–7.\n\n"
+        "- Golub, G. H., & Van Loan, C. F. (2013). *Matrix Computations* "
+        "(4th ed.). Johns Hopkins University Press.\n\n"
+        "- Saad, Y. (2003). *Iterative Methods for Sparse Linear Systems* "
+        "(2nd ed.). SIAM.\n\n"
+        "- Datos: coeficientes ilustrativos definidos para este trabajo "
+        "académico (ver módulo «Caso de estudio»)."
+    )
