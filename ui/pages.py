@@ -863,51 +863,213 @@ def gcp_vs_gc():
     steps.pasos_gcp()
 
 
+
 # 8 ─────────────────────────────────────────────────────────────
 def errores():
     st.title("Análisis de errores")
+
+    st.write(
+        "En esta sección se evalúa la precisión de la solución obtenida "
+        "mediante Gradientes Conjugados Precondicionados (GCP), "
+        "comparándola con la solución numérica de referencia calculada "
+        "mediante el método de Cholesky."
+    )
+
     res = run_current()
     if not res["valid"]:
         return show_invalid(res)
-    st.subheader("Errores por variable (GCP vs referencia)")
+
+    # 1. Errores por variable del escenario activo
+    st.subheader("1. Errores por variable")
+
+    st.write(
+        "Se compara el presupuesto calculado por GCP con el presupuesto "
+        "obtenido mediante Cholesky para cada unidad de TI."
+    )
+
     df = res["errors"]
-    fmt = {"x referencia": "{:.6f}", "x GCP": "{:.6f}", "Error absoluto": "{:.2e}",
-           "Error relativo": "{:.2e}", "Error porcentual (%)": "{:.2e}"}
+
+    fmt = {
+        "x referencia": "{:.6f}",
+        "x GCP": "{:.6f}",
+        "Error absoluto": "{:.2e}",
+        "Error relativo": "{:.2e}",
+        "Error porcentual (%)": "{:.2e}"
+    }
+
     tabla(df, fmt=fmt)
+
+    st.caption(
+        "La solución de referencia corresponde al método de Cholesky "
+        "y la solución GCP es el resultado del método precondicionado."
+    )
+
     if df["Error relativo"].isna().any():
-        st.caption("Si xref,i = 0, el error relativo no está definido para esa componente.")
-    m = st.columns(3)
-    m[0].metric("Residuo relativo ‖b − Ax‖/‖b‖ (GCP)", f"{res['resid_gcp']:.2e}")
-    m[1].metric("Máximo error absoluto", f"{df['Error absoluto'].max():.2e}")
-    m[2].metric("¿Convergió el GCP?", "Sí" if res["gcp"]["converged"] else "No")
-    steps.comparacion_metodos()
+        st.caption(
+            "Cuando una componente de la solución de referencia es cero, "
+            "el error relativo no está definido para esa componente."
+        )
+
     st.divider()
-    st.subheader("Tabla comparativa de los tres escenarios")
-    st.caption("Calculada en vivo con los parámetros actuales (x₀, tolerancia y precondicionador).")
-    filas = {k: [] for k in ["Solución numérica de referencia", "Solución GCP", "Error absoluto (Ea)",
-                              "Error porcentual (Ep)", "Iteraciones GC (sin precondicionar)",
-                              "Iteraciones GCP (precondicionado)", "Número de condición κ(A)",
-                              "Número de condición κ(M⁻¹A)", "Residuo relativo final GCP",
-                              "¿Convergió el algoritmo?", "Interpretación financiera"]}
+
+    # 2. Indicadores de precisión y convergencia
+    st.subheader("2. Indicadores de precisión y convergencia")
+
+    m = st.columns(3)
+
+    m[0].metric(
+        "Residuo relativo final (GCP)",
+        f"{res['resid_gcp']:.2e}"
+    )
+
+    m[1].metric(
+        "Máximo error absoluto",
+        f"{df['Error absoluto'].max():.2e}"
+    )
+
+    m[2].metric(
+        "Convergencia del GCP",
+        "Sí" if res["gcp"]["converged"] else "No"
+    )
+
+    st.markdown("**¿Cómo se interpretan estos indicadores?**")
+
+    st.markdown(
+        "- **Error absoluto:** mide la diferencia entre la solución "
+        "de referencia y la solución calculada por GCP.\n"
+        "- **Error relativo:** expresa el error absoluto en relación "
+        "con el valor de referencia.\n"
+        "- **Error porcentual:** representa el error relativo en porcentaje.\n"
+        "- **Residuo relativo:** mide qué tan bien la solución calculada "
+        "satisface el sistema original Ax = b."
+    )
+
+    st.latex(
+        r"E_a = |x_{\text{referencia}}-x_{\text{GCP}}|"
+    )
+    st.latex(
+        r"E_r = \frac{E_a}{|x_{\text{referencia}}|}"
+    )
+    st.latex(
+        r"E_p = E_r \times 100"
+    )
+    st.latex(
+        r"\text{Residuo relativo} = "
+        r"\frac{\|b-Ax_{\text{GCP}}\|}{\|b\|}"
+    )
+
+    st.divider()
+
+    # 3. Comparación del comportamiento de los métodos
+    st.subheader("3. Comparación de los métodos numéricos")
+    steps.comparacion_metodos()
+
+    st.divider()
+
+    # 4. Comparación de los tres escenarios
+    st.subheader("4. Comparación de resultados de los tres escenarios")
+
+    st.write(
+        "La siguiente tabla reúne los resultados de los tres escenarios "
+        "para comparar la precisión, el número de iteraciones y el "
+        "condicionamiento del sistema."
+    )
+
+    st.caption(
+        "Los resultados se calculan con los parámetros actuales: "
+        "vector inicial, tolerancia y precondicionador."
+    )
+
+    filas = {
+        "Solución de referencia": [],
+        "Solución GCP": [],
+        "Error absoluto (Ea)": [],
+        "Error porcentual (Ep)": [],
+        "Iteraciones GC": [],
+        "Iteraciones GCP": [],
+        "Número de condición κ(A)": [],
+        "Número de condición κ(M⁻¹A)": [],
+        "Residuo relativo final GCP": [],
+        "Convergencia GCP": []
+    }
+
+    interpretaciones = []
+
     for nombre in ESCENARIOS:
         r = run_scenario(nombre)
+
+        if not r["valid"]:
+            st.warning(
+                f"No fue posible calcular los resultados del escenario: {nombre}."
+            )
+            continue
+
         e = r["errors"]
-        filas["Solución numérica de referencia"].append(fmt_vec(r["x_ref"]))
-        filas["Solución GCP"].append(fmt_vec(r["gcp"]["x"]))
-        filas["Error absoluto (Ea)"].append(fmt_vec(e["Error absoluto"], sci=True))
-        filas["Error porcentual (Ep)"].append(fmt_vec(e["Error porcentual (%)"], sci=True))
-        filas["Iteraciones GC (sin precondicionar)"].append(r["gc"]["iterations"])
-        filas["Iteraciones GCP (precondicionado)"].append(r["gcp"]["iterations"])
-        filas["Número de condición κ(A)"].append(f"{r['kappa_A']:.4g}")
-        filas["Número de condición κ(M⁻¹A)"].append(f"{r['kappa_M']:.4g}")
-        filas["Residuo relativo final GCP"].append(f"{r['resid_gcp']:.2e}")
-        filas["¿Convergió el algoritmo?"].append("Sí" if r["gcp"]["converged"] else "No")
-        filas["Interpretación financiera"].append(SCENARIOS[nombre]["interpretacion"])
-    comparativa = pd.DataFrame(filas, index=ESCENARIOS).T
-    comparativa.index.name = "Indicador"
-    st.table(comparativa.astype(str))
+
+        filas["Solución de referencia"].append(
+            fmt_vec(r["x_ref"])
+        )
+        filas["Solución GCP"].append(
+            fmt_vec(r["gcp"]["x"])
+        )
+        filas["Error absoluto (Ea)"].append(
+            fmt_vec(e["Error absoluto"], sci=True)
+        )
+        filas["Error porcentual (Ep)"].append(
+            fmt_vec(e["Error porcentual (%)"], sci=True)
+        )
+        filas["Iteraciones GC"].append(
+            r["gc"]["iterations"]
+        )
+        filas["Iteraciones GCP"].append(
+            r["gcp"]["iterations"]
+        )
+        filas["Número de condición κ(A)"].append(
+            f"{r['kappa_A']:.4g}"
+        )
+        filas["Número de condición κ(M⁻¹A)"].append(
+            f"{r['kappa_M']:.4g}"
+        )
+        filas["Residuo relativo final GCP"].append(
+            f"{r['resid_gcp']:.2e}"
+        )
+        filas["Convergencia GCP"].append(
+            "Sí" if r["gcp"]["converged"] else "No"
+        )
+
+        interpretaciones.append({
+            "Escenario": nombre,
+            "Interpretación": SCENARIOS[nombre]["interpretacion"]
+        })
+
+    if interpretaciones:
+        # Tabla de resultados numéricos
+        comparativa = pd.DataFrame(
+            filas,
+            index=[
+                item["Escenario"] for item in interpretaciones
+            ]
+        ).T
+
+        comparativa.index.name = "Indicador"
+
+        tabla(comparativa.astype(str), hide_index=False)
+
+        st.divider()
+
+        # Interpretación financiera de cada escenario
+        st.subheader("5. Interpretación de los escenarios")
+
+        for item in interpretaciones:
+            with st.expander(item["Escenario"]):
+                st.write(item["Interpretación"])
+
     st.divider()
+
+    # 6. Desarrollo del procedimiento
+    st.subheader("Desarrollo del análisis de errores")
     steps.pasos_errores()
+
 
 
 # 9 ─────────────────────────────────────────────────────────────
