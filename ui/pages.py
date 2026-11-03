@@ -1071,22 +1071,111 @@ def errores():
     steps.pasos_errores()
 
 
-
 # 9 ─────────────────────────────────────────────────────────────
 def qa_page():
-    st.title("Módulo de pruebas (QA)")
-    st.write("Cada prueba se ejecuta de verdad sobre el código de la página, no son resultados escritos a mano.")
-    if st.button("Ejecutar todas las pruebas" if "qa" not in st.session_state else "Volver a ejecutar",
-                 type="primary"):
+    st.title("Pruebas de calidad del sistema (QA)")
+
+    st.write(
+        "En este módulo se ejecutan pruebas para verificar el "
+        "funcionamiento de los métodos numéricos y comprobar que "
+        "los resultados obtenidos sean correctos."
+    )
+
+    st.info(
+        "Las pruebas se ejecutan directamente sobre el código de la "
+        "aplicación. Los resultados no son datos escritos manualmente."
+    )
+
+    # Ejecución de las pruebas
+    if st.button(
+        "Ejecutar todas las pruebas" if "qa" not in st.session_state
+        else "Volver a ejecutar las pruebas",
+        type="primary",
+        width="stretch"
+    ):
         st.session_state.qa = qa.run_all()
+
+    # Presentación de resultados
     if "qa" in st.session_state:
+
         rows = st.session_state.qa
-        ok = sum(r["Conclusión"] == "Aprobada" for r in rows)
-        (st.success if ok == len(rows) else st.error)(f"{ok} de {len(rows)} pruebas aprobadas")
-        st.table(pd.DataFrame(rows).set_index("Prueba"))
+
+        st.divider()
+        st.subheader("Resultados de las pruebas")
+
+        if not rows:
+            st.warning("No se encontraron resultados de las pruebas.")
+            return
+
+        total = len(rows)
+        aprobadas = sum(
+            r["Conclusión"] == "Aprobada" for r in rows
+        )
+        no_aprobadas = total - aprobadas
+
+        # Indicadores generales
+        m = st.columns(3)
+
+        m[0].metric(
+            "Total de pruebas",
+            total
+        )
+
+        m[1].metric(
+            "Pruebas aprobadas",
+            aprobadas
+        )
+
+        m[2].metric(
+            "Pruebas no aprobadas",
+            no_aprobadas
+        )
+
+        # Estado general
+        if aprobadas == total:
+            st.success(
+                f"Todas las pruebas fueron aprobadas: {aprobadas} de {total}."
+            )
+        elif aprobadas > 0:
+            st.warning(
+                f"Se aprobaron {aprobadas} de {total} pruebas. "
+                "Es necesario revisar las pruebas restantes."
+            )
+        else:
+            st.error(
+                "Ninguna prueba fue aprobada. "
+                "Es necesario revisar los resultados."
+            )
+
+        # Tabla de resultados
+        st.markdown("**Detalle de las pruebas ejecutadas**")
+
+        df_resultados = pd.DataFrame(rows).set_index("Prueba")
+        tabla(df_resultados, hide_index=False)
+
     else:
-        st.info("Presiona el botón para ejecutar las pruebas.")
-    st.caption("Las pruebas 1 a 4 son las obligatorias del desafío. La 5 verifica el Cholesky propio.")
+        st.divider()
+        st.info(
+            "Todavía no se ejecutaron las pruebas. "
+            "Presiona el botón para comenzar."
+        )
+
+    st.divider()
+
+    # Información complementaria
+    st.subheader("Información sobre las pruebas")
+
+    st.write(
+        "Las pruebas permiten comprobar que los procedimientos "
+        "implementados en la aplicación produzcan resultados correctos "
+        "y que los métodos numéricos funcionen según lo esperado."
+    )
+
+    st.caption(
+        "Las pruebas 1 a 4 corresponden a los requisitos obligatorios "
+        "del desafío. La prueba 5 verifica la implementación propia "
+        "del método de Cholesky."
+    )
 
 
 # 10 ────────────────────────────────────────────────────────────
