@@ -890,8 +890,8 @@ def errores():
     df = res["errors"]
 
     fmt = {
-        "x referencia": "{:.6f}",
-        "x GCP": "{:.6f}",
+        "por referencia": "{:.6f}",
+        "por GCP": "{:.6f}",
         "Error absoluto": "{:.2e}",
         "Error relativo": "{:.2e}",
         "Error porcentual (%)": "{:.2e}"
