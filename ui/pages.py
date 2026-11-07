@@ -555,7 +555,15 @@ def escenarios():
     }), hide_index=True)
 
     st.markdown("**Interpretación financiera**")
-    st.info(SCENARIOS[s.scenario]["interpretacion"])
+
+    if s.scenario in SCENARIOS:
+        st.info(SCENARIOS[s.scenario]["interpretacion"])
+    else:
+        st.info(
+            "Estás trabajando con un escenario personalizado. "
+            "Los resultados se calculan utilizando los valores "
+            "introducidos manualmente en la matriz A y el vector b."
+        )
 
     st.divider()
 
