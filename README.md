@@ -1,65 +1,139 @@
+
 # Presupuesto de TI con Gradientes Conjugados Precondicionados
 
 - **Estudiante:** Tarqui Humerez Mayra Belen
 - **Mención:** Ingeniería de Sistemas
-- **Enlace a la página:** https://gcp-finanzas-ieukzzzemjwnv2dlofrvhy.streamlit.app/
+- **Aplicación web:** https://gcp-finanzas-ieukzzzemjwnv2dlofrvhy.streamlit.app/
+- **Repositorio:** https://github.com/MayraBTarquiH/gcp-finanzas
 
-## De qué trata este trabajo?
+## ¿De qué trata este proyecto?
 
-Esta es una página web interactiva que resuelve un problema de distribución de presupuesto. Una empresa tiene que repartir su
-presupuesto de tecnología entre 4 áreas: desarrollo de software, infraestructura y nube, ciberseguridad
-y soporte y capacitación.
+Este proyecto consiste en una aplicación web interactiva que permite modelar y resolver un problema de distribución del presupuesto de tecnología de una empresa entre cuatro áreas:
 
-El reparto se puede plantear como un sistema de ecuaciones **Ax = b**, donde A es una matriz simétrica
-y definida positiva. Este problema se resolvió con el método de Gradientes Conjugados Precondicionado del artículo de
-Suñagua (2020), y lo comparé con el Gradiente Conjugado simple y con una solución de referencia
-calculada con Cholesky.
+- Desarrollo de software.
+- Infraestructura y nube.
+- Ciberseguridad.
+- Soporte y capacitación.
 
-Se trabajó en tres escenarios con las mismas variables:
+El problema se representa mediante un sistema de ecuaciones lineales **Ax = b**, donde A es una matriz simétrica y definida positiva, x representa los recursos asignados a cada área y b contiene los valores del modelo.
 
-- **Ideal:** los costos de las áreas son parecidos y el sistema está bien condicionado.
-- **Bajo estrés:** sube el vector b por inflación y más incidentes de seguridad.
-- **Mal condicionado:** los costos tienen escalas muy distintas, y ahí uso el precondicionador de Jacobi.
+Para resolver el sistema se implementó el método de **Gradientes Conjugados Precondicionado (GCP)**, tomando como referencia el artículo de Suñagua (2020). Sus resultados se comparan con el método de Gradientes Conjugados (GC) y con una solución de referencia obtenida mediante la factorización de Cholesky.
 
-## Qué hace la pagina
+El proyecto contempla tres escenarios:
 
-- Revisa que la matriz A sea simétrica y definida positiva antes de calcular.
-- Calcula la solución de referencia con Cholesky (se programó sin usar librerías).
-- Resuelve con Gradientes Conjugados y con Gradientes Conjugados Precondicionado.
+- **Ideal:** representa una situación estable, donde los costos propios de las áreas son similares y las interacciones son relativamente bajas.
+- **Bajo estrés:** representa un escenario en el que aumenta el vector b debido a factores como la inflación y los incidentes de seguridad. La matriz A se mantiene igual que en el escenario ideal.
+- **Mal condicionado:** representa un sistema cuyos coeficientes tienen escalas muy diferentes, permitiendo analizar el efecto del precondicionamiento de Jacobi.
+
+Los valores del modelo se expresan en decenas de miles de bolivianos (Bs).
+
+## Funcionalidades principales
+
+- Verifica que la matriz A sea simétrica y definida positiva antes de realizar los cálculos.
+- Calcula una solución de referencia mediante una implementación propia del método de Cholesky.
+- Resuelve el sistema mediante Gradientes Conjugados y Gradientes Conjugados Precondicionados.
+- Permite trabajar con tres escenarios y modificar los datos de entrada.
 - Calcula los errores por variable, el residuo relativo y los números de condición κ(A) y κ(M⁻¹A).
-- Tiene un módulo de pruebas que se ejecuta dentro de la misma página.
+- Compara el comportamiento de los métodos GC y GCP.
+- Incluye un módulo de pruebas de calidad (QA) para verificar el funcionamiento de los procedimientos implementados.
+- Presenta conclusiones técnicas y financieras de los resultados obtenidos.
 
 ## Instalación y ejecución local
 
+### Requisitos
+
+- Python instalado.
+- Git.
+- Visual Studio Code (opcional).
+
+### Pasos de instalación
+
+Clonar el repositorio:
+
 ```bash
 git clone https://github.com/MayraBTarquiH/gcp-finanzas.git
+```
+
+Ingresar a la carpeta del proyecto:
+
+```bash
 cd gcp-finanzas
+```
+
+Crear un entorno virtual:
+
+```bash
 python -m venv .venv
-source .venv/bin/activate        # En Windows: .venv\Scripts\activate
+```
+
+Activar el entorno virtual:
+
+**Windows (PowerShell):**
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**Windows (CMD):**
+```cmd
+.venv\Scripts\activate.bat
+```
+
+**Linux / macOS:**
+```bash
+source .venv/bin/activate
+```
+
+Instalar las dependencias:
+
+```bash
 pip install -r requirements.txt
+```
+
+Ejecutar la aplicación:
+
+```bash
 streamlit run app.py
 ```
 
-Pruebas automáticas: `python -m pytest`
+### Ejecución de pruebas automáticas
 
-## Cómo está organizado el código
+Para ejecutar las pruebas automatizadas del proyecto:
 
-```
-app.py            archivo principal y menú de la página
-core/             toda la parte matemática
-  scenarios.py    las matrices A y los vectores b de los 3 escenarios
-  validation.py   revisa si A es simétrica y definida positiva
-  direct.py       Cholesky (solución de referencia)
-  cg.py           Gradientes Conjugados y precondicionadores (Jacobi y SSOR)
-  metrics.py      errores, residuo y números de condición
-  analysis.py     junta todos los cálculos de un escenario
-  qa.py           las pruebas del módulo QA
-ui/               las pantallas de la página
-tests/            pruebas automáticas
+```bash
+python -m pytest
 ```
 
-## Referencias
+Además, la aplicación cuenta con un módulo QA que permite ejecutar pruebas directamente desde su interfaz web.
 
-- Suñagua S., P. (2020). Método de Gradientes Conjugados Precondicionado. *Revista Boliviana de Matemática – UMSA*, 04, 2–7.
+## Organización del código
+
+```text
+gcp-finanzas/
+│
+├── app.py                  # Archivo principal y menú de navegación
+│
+├── core/                   # Implementación matemática
+│   ├── scenarios.py        # Matrices A y vectores b de los escenarios
+│   ├── validation.py       # Validación de la matriz
+│   ├── direct.py           # Método de Cholesky
+│   ├── cg.py               # GC y métodos de precondicionamiento
+│   ├── metrics.py          # Errores, residuos y números de condición
+│   ├── analysis.py         # Cálculos y análisis de escenarios
+│   └── qa.py               # Pruebas del módulo QA
+│
+├── ui/                     # Interfaz de usuario
+│   ├── pages.py            # Pantallas y módulos de la aplicación
+│   └── steps.py            # Procedimientos paso a paso
+│
+├── tests/                  # Pruebas automatizadas
+│
+├── requirements.txt        # Dependencias del proyecto
+│
+└── README.md               # Documentación del proyecto
+```
+
+## Referencias bibliográficas
+
+- Suñagua S., P. (2020). *Método de Gradientes Conjugados Precondicionado*. Revista Boliviana de Matemática – UMSA, 04, 2–7.
 - Golub, G. H., & Van Loan, C. F. (2013). *Matrix Computations* (4th ed.). Johns Hopkins University Press.
 - Saad, Y. (2003). *Iterative Methods for Sparse Linear Systems* (2nd ed.). SIAM.
