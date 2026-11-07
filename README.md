@@ -1,5 +1,5 @@
 
-# Presupuesto de TI con Gradientes Conjugados Precondicionados
+# Presupuesto de Tecnologías de la Información (TI) con Gradientes Conjugados Precondicionados
 
 - **Estudiante:** Tarqui Humerez Mayra Belen
 - **Mención:** Ingeniería de Sistemas
