@@ -20,7 +20,7 @@ ESCENARIOS = list(SCENARIOS)
 # 1 ─────────────────────────────────────────────────────────────
 def inicio():
     st.markdown("""<div class="hero">
-      <h1>Presupuesto de TI con gradientes conjugados precondicionados</h1>
+      <h1>Presupuesto de Tecnologías de la Información (TI) con gradientes conjugados precondicionados</h1>
       <p>Reparto de recursos entre cuatro unidades de una empresa, resuelto con el método de
       Suñagua (2020) y analizado en tres escenarios: ideal, bajo estrés y mal condicionado.</p></div>""",
                 unsafe_allow_html=True)
